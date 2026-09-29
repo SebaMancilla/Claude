@@ -15,6 +15,7 @@ from scene import *
 from content import content, srgb_to_lin
 import teorema
 from performer import place as place_performer
+import audience
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.environ.get('MOCKUP_SRC', os.path.join(HERE, '..', 'fotos'))
@@ -22,18 +23,29 @@ CACHE = os.environ.get('MOCKUP_CACHE', os.path.join(HERE, '..', '.cache'))
 W, H = 1280, 960
 
 OPTIONS = {
-    'A': dict(x0=2.54 - 8.0, x1=2.54, y0=0.0, y1=4.0),   # 8 x 4 m landscape, from the stair edge to the left
-    'B': dict(x0=0.17, x1=2.17, y0=0.0, y1=5.0),         # 2 x 5 m portrait, next to the stair
+    # 8 x 4 m landscape, flush with the stair edge, in the plane of the stair front -> behind the pillar
+    'A': dict(x0=2.54 - 8.0, x1=2.54, y0=0.0, y1=4.0),
+    # same screen brought forward, just in front of the pillar row (clears the capital)
+    'A2': dict(x0=2.54 - 8.0, x1=2.54, y0=0.0, y1=4.0, z=-0.55),
+    # 2 x 5 m portrait, flush with the stair edge
+    'B': dict(x0=0.54, x1=2.54, y0=0.0, y1=5.0),
 }
 FRAME_X0 = 2.54 - 8.0     # fluid content defined in hall coordinates -> same pattern scale in both options
 CONTENT = os.environ.get('MOCKUP_CONTENT', 'teorema')
 SINGER_FEET = np.array([3.30, 1.85, 3.55])   # on the stair landing, right in front of the back light
 
+class Light:
+    def __init__(self, pos, tgt, col, inner, outer, size=0.25):
+        self.pos = np.array(pos, float); self.tgt = np.array(tgt, float); self.col = np.array(col, float)
+        self.inner, self.outer, self.size = np.deg2rad(inner), np.deg2rad(outer), size
+        a = self.tgt - self.pos; self.dir = a / np.linalg.norm(a)
+
+
 # stair back light ("contra"): top of the upper flight, aimed down the stairs towards camera
-SPOT_POS = np.array([3.28, 4.38, 6.55])
-SPOT_TGT = np.array([3.10, 0.0, -1.0])
-SPOT_COL = np.array([1.0, 0.84, 0.66])
-SPOT_INNER, SPOT_OUTER = np.deg2rad(8.0), np.deg2rad(30.0)
+SPOT = Light([3.28, 4.38, 6.55], [3.10, 0.0, -1.0], [1.0, 0.84, 0.66], 8.0, 30.0)
+# dim front light on the singer, hung ~3.9 m high at the audience side
+FRONT = Light([3.22, 3.88, -4.1], [3.30, 2.70, 3.55], [1.0, 0.90, 0.78], 3.0, 10.0, size=0.15)
+SPOT_POS, SPOT_COL = SPOT.pos, SPOT.col
 
 # image regions holding window glass (bright pixels inside become night sky)
 WINDOW_BOXES = {
@@ -129,28 +141,31 @@ def spot_occluders():
     return occ
 
 
-def spot_dir():
-    a = SPOT_TGT - SPOT_POS
-    return a / np.linalg.norm(a)
+def front_occluders():
+    occ = [(np.array([BLOCK['x'][0], BLOCK['y'][0], BLOCK['z'][0]]), np.array([BLOCK['x'][1], BLOCK['y'][1], BLOCK['z'][1]]))]
+    for bmin, bmax, bid, btag in boxes(include_caps=True):
+        if bid == ID_PILLAR and abs(btag[0] - 3.0) < 5 and -5 < btag[1] < 5:
+            occ.append((bmin, bmax))
+    return occ
 
 
-def spot_cone(P):
-    v = P - SPOT_POS
+def light_cone(L, P):
+    v = P - L.pos
     r = np.linalg.norm(v, axis=-1) + 1e-6
-    c = (v @ spot_dir()) / r
-    ci, co = np.cos(SPOT_INNER), np.cos(SPOT_OUTER)
+    c = (v @ L.dir) / r
+    ci, co = np.cos(L.inner), np.cos(L.outer)
     k = np.clip((c - co) / (ci - co), 0, 1)
     return k * k * (3 - 2 * k), r, v / r[..., None]
 
 
-def spot_visible(P, occ, soft=True):
-    """fraction of a small (0.25 m) light source visible from P."""
+def light_visible(L, P, occ, soft=True):
+    """fraction of a small light source visible from P."""
     offs = [np.zeros(3)]
     if soft:
-        offs += [np.array(o) * 0.25 for o in ((1, 0, 0), (-1, 0, 0), (0, 0.7, 0.7), (0, -0.7, -0.7))]
+        offs += [np.array(o) * L.size for o in ((1, 0, 0), (-1, 0, 0), (0, 0.7, 0.7), (0, -0.7, -0.7))]
     vis = np.zeros(P.shape[:-1])
     for o in offs:
-        S = np.broadcast_to(SPOT_POS + o, P.shape)
+        S = np.broadcast_to(L.pos + o, P.shape)
         v = np.ones(P.shape[:-1], bool)
         for bmin, bmax in occ:
             v &= ~seg_blocked_box(P, S, bmin, bmax)
@@ -159,15 +174,23 @@ def spot_visible(P, occ, soft=True):
     return vis / len(offs)
 
 
-def spot_irradiance(P, n, occ, soft=True):
-    cone, r, l = spot_cone(P)
+def light_irradiance(L, P, n, occ, soft=True):
+    cone, r, l = light_cone(L, P)
     ndl = np.clip(-(l * n).sum(-1), 0, None)
     E = cone * ndl / (r * r)
     act = E > 1e-6
     vis = np.zeros_like(E)
     if act.any():
-        vis[act] = spot_visible(P[act] + 0.01 * n[act], occ, soft)
+        vis[act] = light_visible(L, P[act] + 0.01 * n[act], occ, soft)
     return E * vis
+
+
+def spot_cone(P):
+    return light_cone(SPOT, P)
+
+
+def spot_irradiance(P, n, occ, soft=True):
+    return light_irradiance(SPOT, P, n, occ, soft)
 
 
 # ---------------------------------------------------------------- volumetrics
@@ -206,13 +229,12 @@ def haze_local(P):
     return np.exp(-1.6 * q) * taper
 
 
-def volumetric_spot(cam, t_limit, scale, occ, steps=72, g=0.62):
-    """single-scattering haze from the stair spot (unit intensity).
+def volumetric(cam, t_limit, scale, L, occ, bmin, bmax, steps=72, g=0.62, local=True):
+    """single-scattering haze from one light (unit intensity).
     returns (uniform-haze map, local stair-haze map)."""
     d = ray_dirs(cam, W, H, scale)
     h, w = d.shape[:2]
     tl = np.minimum(cv2.resize(t_limit.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST), 40.0)
-    bmin = np.array([-1.5, 0.0, -9.0]); bmax = np.array([8.0, 6.6, 9.8])
     with np.errstate(divide='ignore', invalid='ignore'):
         t1 = (bmin - cam.C) / d; t2 = (bmax - cam.C) / d
     tn = np.clip(np.nan_to_num(np.minimum(t1, t2), nan=-np.inf).max(-1), 0.3, None)
@@ -225,19 +247,30 @@ def volumetric_spot(cam, t_limit, scale, occ, steps=72, g=0.62):
         t = tn + (tf - tn) * (i + jit) / steps
         dt = np.clip(tf - tn, 0, None) / steps
         P = cam.C + t[..., None] * d
-        cone, r, l = spot_cone(P)
+        cone, r, l = light_cone(L, P)
         act = (cone > 1e-4) & live
         if not act.any():
             continue
         Pa = P[act]
-        vis = spot_visible(Pa, occ, soft=False)
+        vis = light_visible(L, Pa, occ, soft=False)
         dens = haze_density(Pa)
         cosang = (l[act] * d[act]).sum(-1)
         ph = hg(-cosang, g)
         val = dens * cone[act] * vis / (r[act] ** 2 + 0.05) * ph * dt[act]
         acc[act] += val
-        accl[act] += val * haze_local(Pa)
+        if local:
+            accl[act] += val * haze_local(Pa)
     return acc, accl
+
+
+def volumetric_spot(cam, t_limit, scale, occ):
+    return volumetric(cam, t_limit, scale, SPOT, occ, np.array([-1.5, 0.0, -9.0]), np.array([8.0, 6.6, 9.8]))
+
+
+def volumetric_front(cam, t_limit, scale):
+    v, _ = volumetric(cam, t_limit, scale, FRONT, front_occluders(), np.array([1.0, 1.0, -4.5]),
+                      np.array([5.6, 4.2, 4.2]), steps=48, g=0.45, local=False)
+    return v
 
 
 # ---------------------------------------------------------------- bake
@@ -258,7 +291,7 @@ def bake(photo, option):
     # --- screen spill
     E_scr = np.zeros((H * W, 3), np.float32)
     if scr is not None:
-        nx, ny = (16, 8) if option == 'A' else (4, 10)
+        nx, ny = (16, 8) if option != 'B' else (4, 10)
         Q, Ls, dA = screen_samples(scr, nx, ny)
         front = (Pf[:, 2] < scr.z - 0.01) & (oid.ravel() != ID_SCREEN)
         E_scr[front] = screen_irradiance(Pf[front], nl[front], Q, Ls, dA)
@@ -267,7 +300,7 @@ def bake(photo, option):
         gq = gbuffer(cam, scr, scale=q)
         Pq, nq = gq['P'].reshape(-1, 3), gq['n'].reshape(-1, 3)
         fq = (Pq[:, 2] < scr.z - 0.01) & (gq['id'].ravel() != ID_SCREEN)
-        Q2, L2, dA2 = screen_samples(scr, 8, 4) if option == 'A' else screen_samples(scr, 2, 6)
+        Q2, L2, dA2 = screen_samples(scr, 8, 4) if option != 'B' else screen_samples(scr, 2, 6)
         occ = []
         for bmin, bmax, bid, btag in boxes(include_caps=False):
             if bid == ID_PILLAR and btag[1] < scr.z and btag[1] > -10 and scr.x0 - 6 < btag[0] < scr.x1 + 6:
@@ -289,6 +322,10 @@ def bake(photo, option):
     act = oid.ravel() != ID_SCREEN
     E_spot[act] = spot_irradiance(Pf[act], nl[act], socc)
     out['E_spot'] = E_spot.reshape(H, W)
+    focc = front_occluders()
+    E_front = np.zeros(H * W, np.float32)
+    E_front[act] = light_irradiance(FRONT, Pf[act], nl[act], focc)
+    out['E_front'] = E_front.reshape(H, W)
     print(' spot light', round(time.time() - T0, 1))
 
     # --- planar reflection of the polished floor (half res mirror pass)
@@ -304,6 +341,9 @@ def bake(photo, option):
         f2 = solid & (Pm[:, 2] < scr.z)
         R_scr[f2] = screen_irradiance(Pm[f2], nlm[f2], out['scrQ'], out['scrL'], out['scrdA'])
     R_spot[solid] = spot_irradiance(Pm[solid], nlm[solid], socc, soft=False)
+    R_front = np.zeros(Pm.shape[0])
+    R_front[solid] = light_irradiance(FRONT, Pm[solid], nlm[solid], focc, soft=False)
+    out['R_front'] = R_front.reshape(hm, wm).astype(np.float32)
     out['R_emit'] = R_emit.reshape(hm, wm, 3).astype(np.float32)
     out['R_scr'] = R_scr.reshape(hm, wm, 3).astype(np.float32)
     out['R_spot'] = R_spot.reshape(hm, wm).astype(np.float32)
@@ -313,6 +353,7 @@ def bake(photo, option):
     # --- volumetric haze from the spot (half res)
     v1, v2 = volumetric_spot(cam, gb['t'], 0.5, socc)
     out['vol'] = v1.astype(np.float32); out['vol_l'] = v2.astype(np.float32)
+    out['vol_f'] = volumetric_front(cam, gb['t'], 0.5).astype(np.float32)
     print(' volumetric', round(time.time() - T0, 1))
     return out
 
@@ -338,9 +379,67 @@ def load_or_bake(photo, option, rebake=False, revol=False):
     return b
 
 
+# ---------------------------------------------------------------- audience
+def place_crowd(cam, option, scr, b, p=None):
+    p = dict(DEFAULT) if p is None else p
+    out = []
+    socc = spot_occluders()
+    yy, xx = np.mgrid[0:H, 0:W]
+    if scr is not None:
+        sc_img = cam.project(np.array([[(scr.x0 + scr.x1) / 2, (scr.y0 + scr.y1) / 2, scr.z]]))[0]
+    src_img = cam.project(SPOT_POS[None])[0]
+    for i, (X, Z, hgt, kind, flip) in enumerate(audience.CROWD):
+        if scr is not None and Z > scr.z - 0.35 and X < scr.x1 + 0.4 and X > scr.x0 - 0.4:
+            continue                                          # would stand behind / inside the screen
+        r = audience.place(cam, i, W, H)
+        if r is None:
+            continue
+        mask, alb, mirror, dist, ppm, q = r
+        if mask.max() < 0.05:
+            continue
+        vis = mask * (b['t'] > dist - 0.35)
+        if vis.max() < 0.05:
+            continue
+        alb_n = alb / np.maximum(mask, 1e-3)[..., None]
+        fx, fy = int(np.clip(q[0], 0, W - 1)), int(np.clip(q[1], 0, H - 1))
+        # light reaching the person
+        chest = np.array([X, 1.35, Z]); head = np.array([X, hgt - 0.1, Z])
+        amb = p['amb'] * np.array([0.52, 0.66, 1.0])
+        Es = np.zeros(3)
+        if scr is not None and Z < scr.z:
+            to_s = np.array([(scr.x0 + scr.x1) / 2, (scr.y0 + scr.y1) / 2, scr.z]) - chest
+            Es = screen_irradiance(chest[None], (to_s / np.linalg.norm(to_s))[None], b['scrQ'], b['scrL'], b['scrdA'])[0] * p['scr_light']
+        to_l = SPOT_POS - head
+        Esp = light_irradiance(SPOT, head[None], (to_l / np.linalg.norm(to_l))[None], socc)[0] * p['spot_I'] * SPOT_COL
+        body = alb_n * (amb * 0.9 + 0.10 * (Es + Esp))
+        # rim on the silhouette edges facing the lights
+        bw = 2 if ppm > 170 else 1
+        edge = np.clip(vis - cv2.erode(vis, np.ones((bw + 1, bw + 1))), 0, 1)
+        gy, gx = np.gradient(blur(vis, 1.0))
+        gn = np.sqrt(gx * gx + gy * gy) + 1e-6
+        rim = np.zeros((H, W, 3), np.float32)
+        for tgt, E_col, k in (((sc_img if scr is not None else None), Es, 0.3), (src_img, Esp, 0.45)):
+            if tgt is None or E_col.max() < 1e-4:
+                continue
+            dx, dy = tgt[0] - xx, tgt[1] - yy
+            dn = np.sqrt(dx * dx + dy * dy) + 1e-3
+            facing = np.clip(-(gx * dx + gy * dy) / gn / dn, 0, 1)
+            rim += (edge * facing ** 1.5)[..., None] * E_col * k
+        # contact shadow ellipse
+        P0 = cam.project(np.array([[X - 0.38, 0, Z], [X + 0.38, 0, Z], [X, 0, Z - 0.3], [X, 0, Z + 0.3]]))
+        ax = max(2, int(abs(P0[1, 0] - P0[0, 0]) / 2)); ay = max(1, int(abs(P0[3, 1] - P0[2, 1]) / 2))
+        cs = np.zeros((H, W), np.float32)
+        cv2.ellipse(cs, (fx, fy), (ax, ay), 0, 0, 360, 1.0, -1, cv2.LINE_AA)
+        cs = blur(cs, max(1.0, ay * 0.6))
+        vis = blur(vis, 0.5)
+        out.append(dict(mask=vis, color=body, rim=rim, dist=dist, mirror=mirror * (b['t'] > dist - 0.35),
+                        contact=cs * (b['t'] > dist - 0.35)))
+    return out
+
+
 # ---------------------------------------------------------------- compose
-DEFAULT = dict(exposure=1.0, amb=0.030, scr_disp=0.46, scr_light=1.5, spot_I=22.0, haze=0.012, haze_l=0.35, refl=0.5,
-               scr_glow=0.10, src=1.0)
+DEFAULT = dict(exposure=1.0, amb=0.036, scr_disp=0.34, scr_light=2.1, spot_I=22.0, haze=0.02, haze_l=0.35, refl=0.5,
+               scr_glow=0.10, src=1.0, front_I=14.0, haze_f=0.03, crowd=True)
 
 
 def compose(photo, option, b, params=None, out=None):
@@ -381,7 +480,9 @@ def compose(photo, option, b, params=None, out=None):
     E_spot = b['E_spot'][..., None] * SPOT_COL * p['spot_I']
     E_spot = E_spot * np.where(id_scene == ID_FLIGHT, 0.35, 1.0)[..., None]   # camera sees mostly risers
     E_spot = 0.5 * blur(E_spot, 1.0) + 0.5 * blur(E_spot, 5.0)
-    E = E_amb + E_scr + E_spot
+    E_front = b['E_front'][..., None] * FRONT.col * p['front_I']
+    E_front = 0.5 * blur(E_front, 1.0) + 0.5 * blur(E_front, 4.0)
+    E = E_amb + E_scr + E_spot + E_front
     col = albedo * E
 
     vol_full = cv2.resize(b['vol'] * p['haze'] + b['vol_l'] * p['haze_l'], (W, H), interpolation=cv2.INTER_CUBIC)
@@ -419,25 +520,35 @@ def compose(photo, option, b, params=None, out=None):
     floor = blur((oid == ID_FLOOR).astype(np.float32), 0.8)
     hm, wm = b['R_spot'].shape
     albedo_c = np.array([0.30, 0.27, 0.24])
-    refl = b['R_emit'] * p['scr_disp'] + albedo_c * (b['R_scr'] * p['scr_light'] + b['R_spot'][..., None] * SPOT_COL * p['spot_I'])
+    refl = b['R_emit'] * p['scr_disp'] + albedo_c * (b['R_scr'] * p['scr_light'] + b['R_spot'][..., None] * SPOT_COL * p['spot_I']
+                                                    + b['R_front'][..., None] * FRONT.col * p['front_I'])
     refl = refl + b['R_solid'][..., None] * albedo_c * p['amb'] * np.array([0.52, 0.66, 1.0]) * 0.6
     refl = cv2.resize(refl.astype(np.float32), (W, H), interpolation=cv2.INTER_LINEAR)
     refl = 0.55 * blur(refl, 2.0, 8) + 0.45 * blur(refl, 6, 22)
     cosv = np.clip(-b['d'][..., 1], 0, 1)
     fres = 0.04 + 0.96 * np.power(1 - cosv, 5)
     polish = np.clip(0.6 + 1.2 * (blur(L0, 2.5) / bl_floor - 1.0), 0.3, 1.3)
+    cam = get(photo)
+    crowd = place_crowd(cam, option, scr, b, p) if p['crowd'] else []
+    mirror_occ = np.zeros((H, W), np.float32); contact = np.zeros((H, W), np.float32)
+    for c in crowd:
+        mirror_occ = np.maximum(mirror_occ, c['mirror'])
+        contact = np.maximum(contact, c['contact'])
+    refl = refl * (1 - 0.92 * mirror_occ)[..., None]
+    col = col * (1 - 0.6 * contact * floor)[..., None]
     col = col + refl * (p['refl'] * np.clip(fres * 2.2, 0, 1) * polish * floor)[..., None]
 
     # haze: spot volumetric + soft atmospheric glow around the screen
     vol = np.clip(vol_full, 0, None) * p['spot_I']
     col = col + blur(vol, 1.0)[..., None] * SPOT_COL
+    volf = cv2.resize(b['vol_f'], (W, H), interpolation=cv2.INTER_CUBIC) * p['haze_f'] * p['front_I']
+    col = col + blur(np.clip(volf, 0, None), 1.0)[..., None] * FRONT.col
     if scr is not None:
         g1 = blur(emissive_full, 25) * 0.6 + blur(emissive_full, 70) * 0.4
         col = col + g1 * p['scr_glow']
 
-    cam = get(photo)
-    # the singer on the landing: backlit silhouette with a warm rim
-    sm_, sdist = place_performer(cam, SINGER_FEET, W, H)
+    # the singer on the landing: back light rim + dim front light
+    sm_, sdist, s_alb, s_rnd = place_performer(cam, SINGER_FEET, W, H, with_albedo=True)
     sm_ = sm_ * (b['t'] > sdist - 0.3)
     if sm_.max() > 0:
         q_src = cam.project(SPOT_POS[None])[0]
@@ -449,9 +560,23 @@ def compose(photo, option, b, params=None, out=None):
         dn = np.sqrt(dx * dx + dy * dy) + 1e-3
         facing = np.clip(-(gx_ * dx + gy_ * dy) / (np.sqrt(gx_ ** 2 + gy_ ** 2) + 1e-6) / dn, 0, 1)
         rim = edge * (0.35 + 0.65 * facing) * np.exp(-dn / 160.0)
-        dark = albedo * E_amb * 0.35
-        col = col * (1 - sm_[..., None]) + sm_[..., None] * (dark + 0.25 * blur(vol, 1.0)[..., None] * SPOT_COL)
+        chest = SINGER_FEET + [0, 1.3, 0]
+        cf, rf, lf = light_cone(FRONT, chest[None])
+        Ef = p['front_I'] * cf[0] / rf[0] ** 2
+        yb = np.clip((yy_ - cam.project((SINGER_FEET + [0, 1.78, 0])[None])[0][1]) /
+                     max(1, cam.project(SINGER_FEET[None])[0][1] - cam.project((SINGER_FEET + [0, 1.78, 0])[None])[0][1]), 0, 1)
+        beam = np.clip(1.15 - 0.6 * yb, 0.35, 1.0)                      # front spot centred on the chest
+        s_alb_n = s_alb / np.maximum(sm_, 1e-3)[..., None]
+        lit = s_alb_n * (E_amb * 0.6 + (Ef * (0.25 + 0.75 * s_rnd) * beam)[..., None] * FRONT.col)
+        col = col * (1 - sm_[..., None]) + sm_[..., None] * (lit + 0.25 * blur(vol, 1.0)[..., None] * SPOT_COL)
         col += rim[..., None] * SPOT_COL * 1.4
+    # audience, far to near
+    occ_people = np.zeros((H, W), np.float32)
+    for c in sorted(crowd, key=lambda c: -c['dist']):
+        m = c['mask']
+        col = col * (1 - m[..., None]) + m[..., None] * (c['color'] + 0.12 * blur(vol, 1.0)[..., None] * SPOT_COL)
+        col += c['rim']
+        occ_people = np.maximum(occ_people, m * (c['dist'] < np.linalg.norm(SPOT_POS - cam.C)))
     # the fixture itself (frontal to camera): small hot core, occluded by geometry in front
     q = cam.project(SPOT_POS[None])[0]
     dist = np.linalg.norm(SPOT_POS - cam.C)
@@ -462,7 +587,7 @@ def compose(photo, option, b, params=None, out=None):
         cone = spot_cone(cam.C[None])[0][0]
         core = np.exp(-((xx - q[0]) ** 2 + (yy - q[1]) ** 2) / (2 * 1.6 ** 2))
         halo = np.exp(-np.sqrt((xx - q[0]) ** 2 + (yy - q[1]) ** 2) / 22.0)
-        vis = (1 - (occl if np.isscalar(occl) else occl)) * (1 - blur(sm_, 1.0))
+        vis = (1 - (occl if np.isscalar(occl) else occl)) * (1 - blur(sm_, 1.0)) * (1 - blur(occ_people, 1.0))
         col += ((core * 60 + halo * 0.35) * vis * p['src'] * (0.25 + cone))[..., None] * SPOT_COL
 
     hdr = col * p['exposure']

@@ -152,7 +152,6 @@ def beam_boxes():
         out.append((np.array([-12, 4.0, Z - bw]), np.array([12, 5.3, Z + bw])))
     for X in (-4.5, 0.0, 4.5):
         out.append((np.array([X - bw, 4.0, -12]), np.array([X + bw, 5.3, 12])))
-    out.append((np.array([2.14, 4.5, -12]), np.array([2.32, 5.3, 12])))
     return out
 
 
