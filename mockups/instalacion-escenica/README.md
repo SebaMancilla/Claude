@@ -70,11 +70,20 @@ ella. Conviene verificarlo en terreno.
 
 ## Público
 
-28 personas genéricas de espaldas (1,60–1,86 m), ubicadas en planta frente a la
-pantalla y a la escalera. Como son las mismas en las 3 fotos, la escala es consistente.
-Tienen filo de luz de la pantalla y de la contra, sombra de contacto y recorte en el
-reflejo del piso. En A2 se omiten las personas que quedarían detrás de la pantalla.
-La lista está en `CROWD`, en `src/audience.py`.
+Entre 90 y 145 personas según la opción. Se ubican en planta con la densidad de un público
+real: más compacto adelante, un espacio libre de ~1 m frente a la escalera y la pantalla,
+y nadie pegado a las cámaras. Cada persona tiene un esqueleto 3D con proporciones
+reales (mujeres ~1,60 m y hombres ~1,73 m en promedio), ropa y pose variadas, y se ve
+desde el ángulo real de cada foto. Mira hacia la pantalla o hacia el cantante, y algunas
+forman grupos conversando. Código en `src/crowd.py`.
+
+## Paquete para fotorrealismo con IA
+
+`paquete_ia/` trae, para cada una de las 9 vistas, el esquema, las máscaras (público,
+cantante, pantalla) y un mapa de profundidad, más la guía `paquete_ia/PROMPTS.md` con
+prompts y pasos para Photoshop (Relleno generativo), Stable Diffusion con ControlNet, y
+Krea, Magnific o Firefly. La IA reemplaza a las personas por gente real sin mover la
+escala ni la geometría.
 
 ## Contenido de la pantalla
 

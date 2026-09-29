@@ -16,6 +16,7 @@ from content import content, srgb_to_lin
 import teorema
 from performer import place as place_performer
 import audience
+import crowd as crowdgen
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.environ.get('MOCKUP_SRC', os.path.join(HERE, '..', 'fotos'))
@@ -380,66 +381,116 @@ def load_or_bake(photo, option, rebake=False, revol=False):
 
 
 # ---------------------------------------------------------------- audience
+def _roi_affine(A, cw, ch):
+    """bounding box (in the image) of a canvas warped by A, clipped; returns (x0,y0,x1,y1, A_roi)."""
+    C = np.array([[0, 0, 1], [cw, 0, 1], [0, ch, 1], [cw, ch, 1]], float)
+    q = C @ A.T
+    x0 = int(max(0, np.floor(q[:, 0].min()) - 2)); x1 = int(min(W, np.ceil(q[:, 0].max()) + 2))
+    y0 = int(max(0, np.floor(q[:, 1].min()) - 2)); y1 = int(min(H, np.ceil(q[:, 1].max()) + 2))
+    if x1 <= x0 or y1 <= y0:
+        return None
+    Ar = A.copy(); Ar[0, 2] -= x0; Ar[1, 2] -= y0
+    return x0, y0, x1, y1, Ar
+
+
 def place_crowd(cam, option, scr, b, p=None):
+    """audience at true scale: anthropometric figures rendered from this camera's angle and relit."""
     p = dict(DEFAULT) if p is None else p
-    out = []
+    people = crowdgen.layout('A2' if option == 'A2' else 'A')
     socc = spot_occluders()
-    yy, xx = np.mgrid[0:H, 0:W]
+    out = []
+    clusters = []
     if scr is not None:
-        sc_img = cam.project(np.array([[(scr.x0 + scr.x1) / 2, (scr.y0 + scr.y1) / 2, scr.z]]))[0]
-    src_img = cam.project(SPOT_POS[None])[0]
-    for i, (X, Z, hgt, kind, flip) in enumerate(audience.CROWD):
-        if scr is not None and Z > scr.z - 0.35 and X < scr.x1 + 0.4 and X > scr.x0 - 0.4:
-            continue                                          # would stand behind / inside the screen
-        r = audience.place(cam, i, W, H)
-        if r is None:
+        Q, Ls, dA = b['scrQ'], b['scrL'], float(b['scrdA'])
+        order = np.argsort(Q[:, 0])
+        for part in np.array_split(order, 3 if option != 'B' else 2):
+            clusters.append((Q[part], Ls[part], Q[part].mean(0)))
+        phone_col = Ls.mean(0) * p['scr_disp'] * 2.2
+    else:
+        phone_col = np.array([0.5, 0.55, 0.6])
+    amb = p['amb'] * np.array([0.52, 0.66, 1.0]) * 0.9
+    dist_src = np.linalg.norm(SPOT_POS - cam.C)
+    for pr in people:
+        spec = crowdgen.make_person(pr['seed'], pr['X'], pr['Z'], pr['yaw'])
+        Hh = spec['H']
+        feet = np.array([pr['X'], 0.0, pr['Z']])
+        zc = cam.cam(feet[None])[0, 2]
+        if zc < 1.5:
             continue
-        mask, alb, mirror, dist, ppm, q = r
-        if mask.max() < 0.05:
+        q = cam.project(feet[None])[0]
+        qh = cam.project((feet + [0, Hh, 0])[None])[0]
+        ppm = cam.f / zc
+        if q[0] < -ppm or q[0] > W + ppm or qh[1] > H + 5 or q[1] < -5:
             continue
-        vis = mask * (b['t'] > dist - 0.35)
-        if vis.max() < 0.05:
+        ss = 3 if ppm * Hh < 160 else 2
+        r = crowdgen.raster(spec, cam.C, ppm, ss=ss, noise_seed=pr['seed'])
+        xv, yv, zv = crowdgen.view_basis(spec, cam.C)
+        tv = lambda v: np.array([v @ xv, v @ yv, v @ zv])
+        lights = []
+        chest = np.array([pr['X'], 0.72 * Hh, pr['Z']])
+        if scr is not None and chest[2] < scr.z:
+            for Qc, Lc, cc in clusters:
+                dv = cc - chest; dn = dv / np.linalg.norm(dv)
+                E = screen_irradiance(chest[None], dn[None], Qc, Lc, dA)[0] * p['scr_light']
+                lights.append((tv(dn), E))
+        head = np.array([pr['X'], Hh - 0.1, pr['Z']])
+        dv = SPOT_POS - head; dn = dv / np.linalg.norm(dv)
+        Esp = light_irradiance(SPOT, head[None], dn[None], socc)[0] * p['spot_I']
+        if Esp > 1e-5:
+            lights.append((tv(dn), Esp * SPOT_COL))
+        rgb, a = crowdgen.shade(spec, r, lights, amb, phone_col=phone_col)
+        ch, cw = a.shape
+        up = (qh - q) / (np.linalg.norm(qh - q) + 1e-9)
+        right = np.array([-up[1], up[0]])
+        A = np.zeros((2, 3))
+        A[:, 0] = right; A[:, 1] = -up
+        A[:, 2] = q + ppm * r['x0'] * right + ppm * r['y1'] * up + 0.5 * right - 0.5 * up
+        roi = _roi_affine(A, cw, ch)
+        if roi is None:
             continue
-        alb_n = alb / np.maximum(mask, 1e-3)[..., None]
-        fx, fy = int(np.clip(q[0], 0, W - 1)), int(np.clip(q[1], 0, H - 1))
-        # light reaching the person
-        chest = np.array([X, 1.35, Z]); head = np.array([X, hgt - 0.1, Z])
-        amb = p['amb'] * np.array([0.52, 0.66, 1.0])
-        Es = np.zeros(3)
-        if scr is not None and Z < scr.z:
-            to_s = np.array([(scr.x0 + scr.x1) / 2, (scr.y0 + scr.y1) / 2, scr.z]) - chest
-            Es = screen_irradiance(chest[None], (to_s / np.linalg.norm(to_s))[None], b['scrQ'], b['scrL'], b['scrdA'])[0] * p['scr_light']
-        to_l = SPOT_POS - head
-        Esp = light_irradiance(SPOT, head[None], (to_l / np.linalg.norm(to_l))[None], socc)[0] * p['spot_I'] * SPOT_COL
-        body = alb_n * (amb * 0.9 + 0.10 * (Es + Esp))
-        # rim on the silhouette edges facing the lights
-        bw = 2 if ppm > 170 else 1
-        edge = np.clip(vis - cv2.erode(vis, np.ones((bw + 1, bw + 1))), 0, 1)
-        gy, gx = np.gradient(blur(vis, 1.0))
-        gn = np.sqrt(gx * gx + gy * gy) + 1e-6
-        rim = np.zeros((H, W, 3), np.float32)
-        for tgt, E_col, k in (((sc_img if scr is not None else None), Es, 0.3), (src_img, Esp, 0.45)):
-            if tgt is None or E_col.max() < 1e-4:
-                continue
-            dx, dy = tgt[0] - xx, tgt[1] - yy
-            dn = np.sqrt(dx * dx + dy * dy) + 1e-3
-            facing = np.clip(-(gx * dx + gy * dy) / gn / dn, 0, 1)
-            rim += (edge * facing ** 1.5)[..., None] * E_col * k
-        # contact shadow ellipse
-        P0 = cam.project(np.array([[X - 0.38, 0, Z], [X + 0.38, 0, Z], [X, 0, Z - 0.3], [X, 0, Z + 0.3]]))
+        x0, y0, x1, y1, Ar = roi
+        sz = (x1 - x0, y1 - y0)
+        a_w = cv2.warpAffine(a, Ar, sz, flags=cv2.INTER_LINEAR)
+        rgb_w = cv2.warpAffine(rgb, Ar, sz, flags=cv2.INTER_LINEAR)
+        dist = np.linalg.norm(feet + [0, 1.0, 0] - cam.C)
+        vis = (b['t'][y0:y1, x0:x1] > dist - 0.35).astype(np.float32)
+        a_w *= vis; rgb_w *= vis[..., None]
+        if a_w.max() < 0.02:
+            continue
+        # floor reflection (mirror image below the feet)
+        Am = np.zeros((2, 3)); Am[:, 0] = right; Am[:, 1] = up
+        Am[:, 2] = q + ppm * r['x0'] * right - ppm * r['y1'] * up + 0.5 * right + 0.5 * up
+        mroi = _roi_affine(Am, cw, ch)
+        mir = None
+        if mroi is not None:
+            mx0, my0, mx1, my1, Amr = mroi
+            mw = cv2.warpAffine(a, Amr, (mx1 - mx0, my1 - my0), flags=cv2.INTER_LINEAR)
+            mw *= (b['t'][my0:my1, mx0:mx1] > dist - 0.35)
+            mir = (mx0, my0, mx1, my1, mw)
+        # contact shadow
+        P0 = cam.project(np.array([[pr['X'] - 0.34, 0, pr['Z']], [pr['X'] + 0.34, 0, pr['Z']],
+                                   [pr['X'], 0, pr['Z'] - 0.26], [pr['X'], 0, pr['Z'] + 0.26]]))
         ax = max(2, int(abs(P0[1, 0] - P0[0, 0]) / 2)); ay = max(1, int(abs(P0[3, 1] - P0[2, 1]) / 2))
-        cs = np.zeros((H, W), np.float32)
-        cv2.ellipse(cs, (fx, fy), (ax, ay), 0, 0, 360, 1.0, -1, cv2.LINE_AA)
-        cs = blur(cs, max(1.0, ay * 0.6))
-        vis = blur(vis, 0.5)
-        out.append(dict(mask=vis, color=body, rim=rim, dist=dist, mirror=mirror * (b['t'] > dist - 0.35),
-                        contact=cs * (b['t'] > dist - 0.35)))
+        cx0, cy0 = int(q[0]) - 3 * ax, int(q[1]) - 4 * ay
+        cs = np.zeros((8 * ay + 1, 6 * ax + 1), np.float32)
+        cv2.ellipse(cs, (3 * ax, 4 * ay), (ax, ay), 0, 0, 360, 1.0, -1, cv2.LINE_AA)
+        cs = cv2.GaussianBlur(cs, (0, 0), max(1.0, ay * 0.7))
+        out.append(dict(roi=(x0, y0, x1, y1), a=a_w, rgb=rgb_w, dist=dist, mir=mir, cs=(cx0, cy0, cs)))
     return out
+
+
+def _paste_max(dst, x0, y0, arr):
+    h, w = arr.shape
+    X0, Y0 = max(0, x0), max(0, y0)
+    X1, Y1 = min(dst.shape[1], x0 + w), min(dst.shape[0], y0 + h)
+    if X1 <= X0 or Y1 <= Y0:
+        return
+    dst[Y0:Y1, X0:X1] = np.maximum(dst[Y0:Y1, X0:X1], arr[Y0 - y0:Y1 - y0, X0 - x0:X1 - x0])
 
 
 # ---------------------------------------------------------------- compose
 DEFAULT = dict(exposure=1.0, amb=0.036, scr_disp=0.34, scr_light=2.1, spot_I=22.0, haze=0.02, haze_l=0.35, refl=0.5,
-               scr_glow=0.10, src=1.0, scr_gamma=1.35, front_I=14.0, haze_f=0.03, crowd=True)
+               scr_glow=0.10, src=1.0, scr_gamma=1.35, front_I=14.0, haze_f=0.03, crowd=True, export=None)
 
 
 def compose(photo, option, b, params=None, out=None):
@@ -532,8 +583,11 @@ def compose(photo, option, b, params=None, out=None):
     crowd = place_crowd(cam, option, scr, b, p) if p['crowd'] else []
     mirror_occ = np.zeros((H, W), np.float32); contact = np.zeros((H, W), np.float32)
     for c in crowd:
-        mirror_occ = np.maximum(mirror_occ, c['mirror'])
-        contact = np.maximum(contact, c['contact'])
+        if c['mir'] is not None:
+            mx0, my0, mx1, my1, mw = c['mir']
+            _paste_max(mirror_occ, mx0, my0, mw)
+        cx0, cy0, cs = c['cs']
+        _paste_max(contact, cx0, cy0, cs)
     refl = refl * (1 - 0.92 * mirror_occ)[..., None]
     col = col * (1 - 0.6 * contact * floor)[..., None]
     col = col + refl * (p['refl'] * np.clip(fres * 2.2, 0, 1) * polish * floor)[..., None]
@@ -572,11 +626,21 @@ def compose(photo, option, b, params=None, out=None):
         col += rim[..., None] * SPOT_COL * 1.4
     # audience, far to near
     occ_people = np.zeros((H, W), np.float32)
+    people_mask = np.zeros((H, W), np.float32)
+    depth = np.minimum(b['t'], 60.0).astype(np.float32).copy()
+    volb = blur(vol, 1.0)
+    dist_src_img = np.linalg.norm(SPOT_POS - cam.C)
     for c in sorted(crowd, key=lambda c: -c['dist']):
-        m = c['mask']
-        col = col * (1 - m[..., None]) + m[..., None] * (c['color'] + 0.12 * blur(vol, 1.0)[..., None] * SPOT_COL)
-        col += c['rim']
-        occ_people = np.maximum(occ_people, m * (c['dist'] < np.linalg.norm(SPOT_POS - cam.C)))
+        x0, y0, x1, y1 = c['roi']
+        a = cv2.GaussianBlur(c['a'], (0, 0), 0.45)
+        rgb = cv2.GaussianBlur(c['rgb'], (0, 0), 0.45)
+        veil = volb[y0:y1, x0:x1, None] * SPOT_COL * min(0.5, 0.06 + c['dist'] / 40.0)
+        col[y0:y1, x0:x1] = col[y0:y1, x0:x1] * (1 - a[..., None]) + rgb + a[..., None] * veil
+        if c['dist'] < dist_src_img:
+            occ_people[y0:y1, x0:x1] = np.maximum(occ_people[y0:y1, x0:x1], a)
+        people_mask[y0:y1, x0:x1] = np.maximum(people_mask[y0:y1, x0:x1], a)
+        sub = depth[y0:y1, x0:x1]
+        sub[a > 0.5] = np.minimum(sub[a > 0.5], c['dist'])
     # the fixture itself (frontal to camera): small hot core, occluded by geometry in front
     q = cam.project(SPOT_POS[None])[0]
     dist = np.linalg.norm(SPOT_POS - cam.C)
@@ -603,6 +667,21 @@ def compose(photo, option, b, params=None, out=None):
     res = (o * 255 + 0.5).astype(np.uint8)
     if out:
         cv2.imwrite(out, res[:, :, ::-1])
+    if p.get('export'):
+        ex = p['export']
+        os.makedirs(ex, exist_ok=True)
+        cv2.imwrite(os.path.join(ex, 'esquema.png'), res[:, :, ::-1])
+        m8 = lambda m: (np.clip(m, 0, 1) * 255 + 0.5).astype(np.uint8)
+        cv2.imwrite(os.path.join(ex, 'mascara_publico.png'), m8(cv2.dilate(people_mask, np.ones((3, 3)))))
+        cv2.imwrite(os.path.join(ex, 'mascara_cantante.png'), m8(cv2.dilate(sm_, np.ones((5, 5)))))
+        scr_m = b['screen'].astype(np.float32) if scr is not None else np.zeros((H, W), np.float32)
+        cv2.imwrite(os.path.join(ex, 'mascara_pantalla.png'), m8(scr_m * (1 - people_mask)))
+        # inverse depth (near = white), as used by ControlNet / depth-aware tools
+        dsc = depth.copy()
+        dsc[sm_ > 0.5] = np.minimum(dsc[sm_ > 0.5], sdist)
+        inv = 1.0 / np.maximum(dsc, 0.5)
+        inv = (inv - inv.min()) / (inv.max() - inv.min() + 1e-9)
+        cv2.imwrite(os.path.join(ex, 'profundidad.png'), (inv ** 0.8 * 65535).astype(np.uint16))
     return res
 
 
