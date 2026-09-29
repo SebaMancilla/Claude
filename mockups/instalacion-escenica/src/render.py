@@ -439,7 +439,7 @@ def place_crowd(cam, option, scr, b, p=None):
 
 # ---------------------------------------------------------------- compose
 DEFAULT = dict(exposure=1.0, amb=0.036, scr_disp=0.34, scr_light=2.1, spot_I=22.0, haze=0.02, haze_l=0.35, refl=0.5,
-               scr_glow=0.10, src=1.0, front_I=14.0, haze_f=0.03, crowd=True)
+               scr_glow=0.10, src=1.0, scr_gamma=1.35, front_I=14.0, haze_f=0.03, crowd=True)
 
 
 def compose(photo, option, b, params=None, out=None):
@@ -504,7 +504,7 @@ def compose(photo, option, b, params=None, out=None):
     if scr is not None:
         sm = b['screen']
         Ps = b['P'][sm].astype(np.float64)
-        c = scr_color(scr, Ps[:, 0], Ps[:, 1]) * p['scr_disp']
+        c = np.power(scr_color(scr, Ps[:, 0], Ps[:, 1]), p['scr_gamma']) * p['scr_disp'] * 1.25
         u = Ps[:, 0] - scr.x0; v = Ps[:, 1] - scr.y0
         seam = np.minimum(np.abs((u + 0.25) % 0.5 - 0.25), np.abs((v + 0.25) % 0.5 - 0.25))
         c *= (0.94 + 0.06 * np.clip(seam / 0.012, 0, 1))[:, None]
@@ -520,7 +520,7 @@ def compose(photo, option, b, params=None, out=None):
     floor = blur((oid == ID_FLOOR).astype(np.float32), 0.8)
     hm, wm = b['R_spot'].shape
     albedo_c = np.array([0.30, 0.27, 0.24])
-    refl = b['R_emit'] * p['scr_disp'] + albedo_c * (b['R_scr'] * p['scr_light'] + b['R_spot'][..., None] * SPOT_COL * p['spot_I']
+    refl = np.power(b['R_emit'], p['scr_gamma']) * p['scr_disp'] * 1.25 + albedo_c * (b['R_scr'] * p['scr_light'] + b['R_spot'][..., None] * SPOT_COL * p['spot_I']
                                                     + b['R_front'][..., None] * FRONT.col * p['front_I'])
     refl = refl + b['R_solid'][..., None] * albedo_c * p['amb'] * np.array([0.52, 0.66, 1.0]) * 0.6
     refl = cv2.resize(refl.astype(np.float32), (W, H), interpolation=cv2.INTER_LINEAR)
@@ -609,7 +609,7 @@ def compose(photo, option, b, params=None, out=None):
 if __name__ == '__main__':
     ph = int(sys.argv[1]); opt = sys.argv[2]
     args = [a for a in sys.argv[3:] if not a.startswith('--')]
-    out = args[0] if args else os.path.join(HERE, 'out', f'{ph}{opt}.png')
+    out = args[0] if args else os.path.join(HERE, '..', 'renders', f'foto{ph}_opcion{opt}.png')
     t0 = time.time()
     b = load_or_bake(ph, opt, rebake='--rebake' in sys.argv)
     compose(ph, opt, b, out=out)
