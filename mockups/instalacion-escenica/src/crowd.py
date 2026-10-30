@@ -200,10 +200,14 @@ def parts_local(p):
         elif pose == 'drink':
             Tg = chest + [side * 0.1, -0.05, 0.28]
             hint = np.array([side * 0.5, -1.0, -0.2])
+        elif pose == 'reach' and side == 1:                   # arm raised towards the screen (gesture)
+            Tg = S + [side * 0.2, (L_ua + L_fa) * 0.66, (L_ua + L_fa) * 0.58]
+            hint = np.array([side * 0.7, -0.6, -0.2])
         else:
             Tg = S + [side * 0.035, -(L_ua + L_fa) * 0.95, 0.04]
             hint = np.array([0, 0, -1.0])
         E, Hd = _ik(S, Tg, L_ua, L_fa, hint)
+        p.setdefault('_joints', {})[side] = (S, E, Hd)       # person-local, for pose overlays
         cap(S + [0, 0.01, 0], E, ra_u, ra_u * 0.86, 'top')
         cap(E, Hd, ra_f, ra_f * 0.82, 'top' if p['top'] != 'tee' else 'skin')
         dirh = (Hd - E) / (np.linalg.norm(Hd - E) + 1e-9)

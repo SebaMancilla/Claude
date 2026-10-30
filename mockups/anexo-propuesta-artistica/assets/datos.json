@@ -1,0 +1,1357 @@
+{
+ "byKind": {
+  "documented": 32,
+  "inferred": 23
+ },
+ "edges": 55,
+ "latentes": 46,
+ "degree": [
+  {
+   "name": "memoria",
+   "n": 13
+  },
+  {
+   "name": "archivo",
+   "n": 9
+  },
+  {
+   "name": "cuerpo",
+   "n": 9
+  },
+  {
+   "name": "cartografía",
+   "n": 6
+  },
+  {
+   "name": "presencia",
+   "n": 5
+  },
+  {
+   "name": "corporalidad",
+   "n": 3
+  },
+  {
+   "name": "performance",
+   "n": 3
+  },
+  {
+   "name": "ritual",
+   "n": 3
+  },
+  {
+   "name": "oralidad",
+   "n": 3
+  },
+  {
+   "name": "redes",
+   "n": 3
+  },
+  {
+   "name": "internet",
+   "n": 3
+  },
+  {
+   "name": "archivo vivo",
+   "n": 2
+  },
+  {
+   "name": "archivo digital",
+   "n": 2
+  },
+  {
+   "name": "ancestralidad",
+   "n": 2
+  },
+  {
+   "name": "paisaje",
+   "n": 2
+  },
+  {
+   "name": "escucha",
+   "n": 2
+  },
+  {
+   "name": "arte sonoro",
+   "n": 2
+  },
+  {
+   "name": "código",
+   "n": 2
+  },
+  {
+   "name": "arte generativo",
+   "n": 2
+  },
+  {
+   "name": "máquina",
+   "n": 2
+  },
+  {
+   "name": "cibernética",
+   "n": 2
+  },
+  {
+   "name": "inteligencia artificial",
+   "n": 2
+  },
+  {
+   "name": "obsolescencia",
+   "n": 2
+  },
+  {
+   "name": "documentación",
+   "n": 2
+  },
+  {
+   "name": "afecto",
+   "n": 1
+  },
+  {
+   "name": "percepción",
+   "n": 1
+  },
+  {
+   "name": "interacción",
+   "n": 1
+  },
+  {
+   "name": "interfaz",
+   "n": 1
+  },
+  {
+   "name": "comunidad",
+   "n": 1
+  },
+  {
+   "name": "deriva",
+   "n": 1
+  },
+  {
+   "name": "naturaleza",
+   "n": 1
+  },
+  {
+   "name": "ecosistema",
+   "n": 1
+  },
+  {
+   "name": "bioarte",
+   "n": 1
+  },
+  {
+   "name": "materia",
+   "n": 1
+  },
+  {
+   "name": "resonancia",
+   "n": 1
+  },
+  {
+   "name": "memoria sonora",
+   "n": 1
+  },
+  {
+   "name": "frecuencia",
+   "n": 1
+  },
+  {
+   "name": "espacialización",
+   "n": 1
+  },
+  {
+   "name": "espectro",
+   "n": 1
+  },
+  {
+   "name": "programación",
+   "n": 1
+  },
+  {
+   "name": "glitch",
+   "n": 1
+  },
+  {
+   "name": "hardware",
+   "n": 1
+  },
+  {
+   "name": "net art",
+   "n": 1
+  },
+  {
+   "name": "aprendizaje automático",
+   "n": 1
+  },
+  {
+   "name": "futuros",
+   "n": 1
+  },
+  {
+   "name": "conocimiento situado",
+   "n": 1
+  },
+  {
+   "name": "experimentación",
+   "n": 1
+  },
+  {
+   "name": "laboratorio",
+   "n": 1
+  }
+ ],
+ "grupos": [
+  {
+   "criterio": "técnica",
+   "grupos": {
+    "archivo": [
+     "memoria",
+     "archivo",
+     "archivo vivo",
+     "archivo digital",
+     "conocimiento situado",
+     "experimentación",
+     "laboratorio",
+     "documentación"
+    ],
+    "acción": [
+     "cuerpo",
+     "corporalidad",
+     "presencia",
+     "afecto",
+     "percepción",
+     "interacción",
+     "interfaz",
+     "performance",
+     "ritual",
+     "oralidad",
+     "ancestralidad",
+     "comunidad"
+    ],
+    "materia": [
+     "cartografía",
+     "paisaje",
+     "deriva",
+     "naturaleza",
+     "ecosistema",
+     "bioarte",
+     "materia",
+     "resonancia"
+    ],
+    "sonido": [
+     "escucha",
+     "arte sonoro",
+     "memoria sonora",
+     "frecuencia",
+     "espacialización",
+     "espectro"
+    ],
+    "código": [
+     "código",
+     "arte generativo",
+     "programación",
+     "glitch",
+     "máquina",
+     "hardware",
+     "cibernética",
+     "redes",
+     "internet",
+     "net art",
+     "inteligencia artificial",
+     "aprendizaje automático",
+     "obsolescencia",
+     "futuros"
+    ]
+   }
+  },
+  {
+   "criterio": "tema",
+   "grupos": {
+    "memoria": [
+     "memoria",
+     "archivo",
+     "archivo vivo",
+     "archivo digital",
+     "ritual",
+     "oralidad",
+     "ancestralidad",
+     "comunidad",
+     "conocimiento situado",
+     "experimentación",
+     "laboratorio",
+     "documentación"
+    ],
+    "cuerpo": [
+     "cuerpo",
+     "corporalidad",
+     "presencia",
+     "afecto",
+     "percepción",
+     "interacción",
+     "interfaz",
+     "performance"
+    ],
+    "ecología": [
+     "cartografía",
+     "paisaje",
+     "deriva",
+     "naturaleza",
+     "ecosistema",
+     "bioarte",
+     "materia",
+     "resonancia"
+    ],
+    "percepción": [
+     "escucha",
+     "arte sonoro",
+     "memoria sonora",
+     "frecuencia",
+     "espacialización",
+     "espectro"
+    ],
+    "sistemas": [
+     "código",
+     "arte generativo",
+     "programación",
+     "glitch",
+     "máquina",
+     "hardware",
+     "cibernética",
+     "redes",
+     "internet",
+     "net art",
+     "inteligencia artificial",
+     "aprendizaje automático",
+     "obsolescencia",
+     "futuros"
+    ]
+   }
+  },
+  {
+   "criterio": "territorio",
+   "grupos": {
+    "red": [
+     "memoria",
+     "archivo",
+     "archivo vivo",
+     "archivo digital",
+     "internet",
+     "net art",
+     "inteligencia artificial",
+     "aprendizaje automático",
+     "obsolescencia",
+     "futuros"
+    ],
+    "cuerpo": [
+     "cuerpo",
+     "corporalidad",
+     "presencia",
+     "afecto",
+     "percepción",
+     "interacción",
+     "interfaz",
+     "performance"
+    ],
+    "territorio": [
+     "ritual",
+     "oralidad",
+     "ancestralidad",
+     "comunidad",
+     "cartografía",
+     "paisaje",
+     "deriva",
+     "naturaleza",
+     "ecosistema",
+     "bioarte",
+     "materia",
+     "resonancia"
+    ],
+    "espacio": [
+     "escucha",
+     "arte sonoro",
+     "memoria sonora",
+     "frecuencia",
+     "espacialización",
+     "espectro"
+    ],
+    "laboratorio": [
+     "código",
+     "arte generativo",
+     "programación",
+     "glitch",
+     "máquina",
+     "hardware",
+     "cibernética",
+     "redes",
+     "conocimiento situado",
+     "experimentación",
+     "laboratorio",
+     "documentación"
+    ]
+   }
+  }
+ ],
+ "latentesLista": [
+  {
+   "a": "hardware",
+   "b": "ritual",
+   "origen": "curatorial",
+   "improbabilidad": 3,
+   "compartidas": [],
+   "razon": "El circuito y el rito ordenan energía, repetición y secuencia: dos maneras de activar algo."
+  },
+  {
+   "a": "glitch",
+   "b": "oralidad",
+   "origen": "curatorial",
+   "improbabilidad": 3,
+   "compartidas": [],
+   "razon": "La falla y el relato oral cambian en cada transmisión: versiones antes que originales."
+  },
+  {
+   "a": "espectro",
+   "b": "archivo digital",
+   "origen": "curatorial",
+   "improbabilidad": 3,
+   "compartidas": [],
+   "razon": "Lo que existe sin percibirse: frecuencias fuera del oído, datos fuera de la vista."
+  },
+  {
+   "a": "bioarte",
+   "b": "código",
+   "origen": "curatorial",
+   "improbabilidad": 3,
+   "compartidas": [],
+   "razon": "Genoma y programa como escrituras que se ejecutan."
+  },
+  {
+   "a": "deriva",
+   "b": "aprendizaje automático",
+   "origen": "curatorial",
+   "improbabilidad": 3,
+   "compartidas": [],
+   "razon": "Dos recorridos que aprenden del azar y de lo que encuentran."
+  },
+  {
+   "a": "máquina",
+   "b": "ancestralidad",
+   "origen": "curatorial",
+   "improbabilidad": 3,
+   "compartidas": [],
+   "razon": "Saberes que se transmiten sin pasar por la escritura: el gesto repetido y la instrucción mecánica."
+  },
+  {
+   "a": "presencia",
+   "b": "espacialización",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "física",
+    "virtual",
+    "corporalidad"
+   ],
+   "razon": "Ambas definiciones usan «física», «virtual», «corporalidad», aunque difieren en técnica (acción / sonido), tema (cuerpo / percepción) y territorio (cuerpo / espacio)."
+  },
+  {
+   "a": "cartografía",
+   "b": "laboratorio",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "espaciales",
+    "simbólicas",
+    "territorios"
+   ],
+   "razon": "Ambas definiciones usan «espaciales», «simbólicas», «territorios», aunque difieren en técnica (materia / archivo), tema (ecología / memoria) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "resonancia",
+   "b": "frecuencia",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "vibración",
+    "señal",
+    "social"
+   ],
+   "razon": "Ambas definiciones usan «vibración», «señal», «social», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "frecuencia",
+   "b": "redes",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "señal",
+    "sociales",
+    "afectivos"
+   ],
+   "razon": "Ambas definiciones usan «señal», «sociales», «afectivos», aunque difieren en técnica (sonido / código), tema (percepción / sistemas) y territorio (espacio / laboratorio)."
+  },
+  {
+   "a": "oralidad",
+   "b": "arte sonoro",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "escucha",
+    "performance"
+   ],
+   "razon": "Ambas definiciones usan «escucha», «performance», aunque difieren en técnica (acción / sonido), tema (memoria / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "memoria sonora",
+   "b": "documentación",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "conservado",
+    "registro"
+   ],
+   "razon": "Ambas definiciones usan «conservado», «registro», aunque difieren en técnica (sonido / archivo), tema (percepción / memoria) y territorio (espacio / laboratorio)."
+  },
+  {
+   "a": "archivo",
+   "b": "interfaz",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "permanece",
+    "gesto"
+   ],
+   "razon": "Ambas definiciones usan «permanece», «gesto», aunque difieren en técnica (archivo / acción), tema (memoria / cuerpo) y territorio (red / cuerpo)."
+  },
+  {
+   "a": "interacción",
+   "b": "ecosistema",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "mutua",
+    "ambiente"
+   ],
+   "razon": "Ambas definiciones usan «mutua», «ambiente», aunque difieren en técnica (acción / materia), tema (cuerpo / ecología) y territorio (cuerpo / territorio)."
+  },
+  {
+   "a": "interacción",
+   "b": "cibernética",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "influencia",
+    "ambiente"
+   ],
+   "razon": "Ambas definiciones usan «influencia», «ambiente», aunque difieren en técnica (acción / código), tema (cuerpo / sistemas) y territorio (cuerpo / laboratorio)."
+  },
+  {
+   "a": "paisaje",
+   "b": "arte sonoro",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "mirada",
+    "escuchado"
+   ],
+   "razon": "Ambas definiciones usan «mirada», «escuchado», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "deriva",
+   "b": "escucha",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "investigar",
+    "espacios"
+   ],
+   "razon": "Ambas definiciones usan «investigar», «espacios», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "deriva",
+   "b": "espacialización",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "espacios",
+    "recorrido"
+   ],
+   "razon": "Ambas definiciones usan «espacios», «recorrido», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "materia",
+   "b": "hardware",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "digital",
+    "pantalla"
+   ],
+   "razon": "Ambas definiciones usan «digital», «pantalla», aunque difieren en técnica (materia / código), tema (ecología / sistemas) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "memoria",
+   "b": "hardware",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "soportes",
+    "digitales"
+   ],
+   "razon": "Ambas definiciones usan «soportes», «digitales», aunque difieren en técnica (archivo / código), tema (memoria / sistemas) y territorio (red / laboratorio)."
+  },
+  {
+   "a": "percepción",
+   "b": "escucha",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "corporal",
+    "composición"
+   ],
+   "razon": "Ambas definiciones usan «corporal», «composición», aunque difieren en técnica (acción / sonido), tema (cuerpo / percepción) y territorio (cuerpo / espacio)."
+  },
+  {
+   "a": "cuerpo",
+   "b": "espectro",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "perceptiva",
+    "política"
+   ],
+   "razon": "Ambas definiciones usan «perceptiva», «política», aunque difieren en técnica (acción / sonido), tema (cuerpo / percepción) y territorio (cuerpo / espacio)."
+  },
+  {
+   "a": "interacción",
+   "b": "glitch",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "gesto",
+    "error"
+   ],
+   "razon": "Ambas definiciones usan «gesto», «error», aunque difieren en técnica (acción / código), tema (cuerpo / sistemas) y territorio (cuerpo / laboratorio)."
+  },
+  {
+   "a": "cartografía",
+   "b": "espacialización",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "espaciales",
+    "orienta"
+   ],
+   "razon": "Ambas definiciones usan «espaciales», «orienta», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "paisaje",
+   "b": "conocimiento situado",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "territorio",
+    "mirada"
+   ],
+   "razon": "Ambas definiciones usan «territorio», «mirada», aunque difieren en técnica (materia / archivo), tema (ecología / memoria) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "presencia",
+   "b": "resonancia",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "compartido",
+    "física"
+   ],
+   "razon": "Ambas definiciones usan «compartido», «física», aunque difieren en técnica (acción / materia), tema (cuerpo / ecología) y territorio (cuerpo / territorio)."
+  },
+  {
+   "a": "paisaje",
+   "b": "memoria sonora",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "territorio",
+    "escuchado"
+   ],
+   "razon": "Ambas definiciones usan «territorio», «escuchado», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "resonancia",
+   "b": "escucha",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "vibración",
+    "señal"
+   ],
+   "razon": "Ambas definiciones usan «vibración», «señal», aunque difieren en técnica (materia / sonido), tema (ecología / percepción) y territorio (territorio / espacio)."
+  },
+  {
+   "a": "interfaz",
+   "b": "laboratorio",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "protocolo",
+    "espacio"
+   ],
+   "razon": "Ambas definiciones usan «protocolo», «espacio», aunque difieren en técnica (acción / archivo), tema (cuerpo / memoria) y territorio (cuerpo / laboratorio)."
+  },
+  {
+   "a": "archivo",
+   "b": "cartografía",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "selección"
+   ],
+   "razon": "Ambas definiciones usan «selección», aunque difieren en técnica (archivo / materia), tema (memoria / ecología) y territorio (red / territorio)."
+  },
+  {
+   "a": "archivo digital",
+   "b": "performance",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "documentación"
+   ],
+   "razon": "Ambas definiciones usan «documentación», aunque difieren en técnica (archivo / acción), tema (memoria / cuerpo) y territorio (red / cuerpo)."
+  },
+  {
+   "a": "corporalidad",
+   "b": "materia",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "sensible"
+   ],
+   "razon": "Ambas definiciones usan «sensible», aunque difieren en técnica (acción / materia), tema (cuerpo / ecología) y territorio (cuerpo / territorio)."
+  },
+  {
+   "a": "corporalidad",
+   "b": "frecuencia",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "ritmo"
+   ],
+   "razon": "Ambas definiciones usan «ritmo», aunque difieren en técnica (acción / sonido), tema (cuerpo / percepción) y territorio (cuerpo / espacio)."
+  },
+  {
+   "a": "presencia",
+   "b": "deriva",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "atención"
+   ],
+   "razon": "Ambas definiciones usan «atención», aunque difieren en técnica (acción / materia), tema (cuerpo / ecología) y territorio (cuerpo / territorio)."
+  },
+  {
+   "a": "afecto",
+   "b": "naturaleza",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "fuerza"
+   ],
+   "razon": "Ambas definiciones usan «fuerza», aunque difieren en técnica (acción / materia), tema (cuerpo / ecología) y territorio (cuerpo / territorio)."
+  },
+  {
+   "a": "interfaz",
+   "b": "redes",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "contacto"
+   ],
+   "razon": "Ambas definiciones usan «contacto», aunque difieren en técnica (acción / código), tema (cuerpo / sistemas) y territorio (cuerpo / laboratorio)."
+  },
+  {
+   "a": "oralidad",
+   "b": "futuros",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "relato"
+   ],
+   "razon": "Ambas definiciones usan «relato», aunque difieren en técnica (acción / código), tema (memoria / sistemas) y territorio (territorio / red)."
+  },
+  {
+   "a": "comunidad",
+   "b": "redes",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "vínculos"
+   ],
+   "razon": "Ambas definiciones usan «vínculos», aunque difieren en técnica (acción / código), tema (memoria / sistemas) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "comunidad",
+   "b": "internet",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "conflictos"
+   ],
+   "razon": "Ambas definiciones usan «conflictos», aunque difieren en técnica (acción / código), tema (memoria / sistemas) y territorio (territorio / red)."
+  },
+  {
+   "a": "naturaleza",
+   "b": "glitch",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "crítica"
+   ],
+   "razon": "Ambas definiciones usan «crítica», aunque difieren en técnica (materia / código), tema (ecología / sistemas) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "naturaleza",
+   "b": "aprendizaje automático",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "agencias"
+   ],
+   "razon": "Ambas definiciones usan «agencias», aunque difieren en técnica (materia / código), tema (ecología / sistemas) y territorio (territorio / red)."
+  },
+  {
+   "a": "bioarte",
+   "b": "cibernética",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "biológicos"
+   ],
+   "razon": "Ambas definiciones usan «biológicos», aunque difieren en técnica (materia / código), tema (ecología / sistemas) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "bioarte",
+   "b": "net art",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "artística"
+   ],
+   "razon": "Ambas definiciones usan «artística», aunque difieren en técnica (materia / código), tema (ecología / sistemas) y territorio (territorio / red)."
+  },
+  {
+   "a": "materia",
+   "b": "máquina",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "energía"
+   ],
+   "razon": "Ambas definiciones usan «energía», aunque difieren en técnica (materia / código), tema (ecología / sistemas) y territorio (territorio / laboratorio)."
+  },
+  {
+   "a": "arte sonoro",
+   "b": "experimentación",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "conocimiento"
+   ],
+   "razon": "Ambas definiciones usan «conocimiento», aunque difieren en técnica (sonido / archivo), tema (percepción / memoria) y territorio (espacio / laboratorio)."
+  },
+  {
+   "a": "espectro",
+   "b": "inteligencia artificial",
+   "origen": "regla",
+   "improbabilidad": 3,
+   "compartidas": [
+    "fantasmales"
+   ],
+   "razon": "Ambas definiciones usan «fantasmales», aunque difieren en técnica (sonido / código), tema (percepción / sistemas) y territorio (espacio / red)."
+  }
+ ],
+ "territorios": [
+  {
+   "nombre": "Arica",
+   "peso": 0.113,
+   "hogar": [
+    "archivo",
+    "cuerpo",
+    "afecto",
+    "interfaz",
+    "performance",
+    "ritual"
+   ],
+   "top": [
+    "performance 57%",
+    "afecto 57%",
+    "interfaz 48%",
+    "cuerpo 45%"
+   ]
+  },
+  {
+   "nombre": "Antofagasta",
+   "peso": 0.12,
+   "hogar": [
+    "percepción",
+    "materia",
+    "código",
+    "máquina",
+    "obsolescencia",
+    "laboratorio"
+   ],
+   "top": [
+    "materia 71%",
+    "máquina 68%",
+    "obsolescencia 51%",
+    "código 37%"
+   ]
+  },
+  {
+   "nombre": "La Serena",
+   "peso": 0.079,
+   "hogar": [
+    "frecuencia",
+    "espectro"
+   ],
+   "top": [
+    "espectro 73%",
+    "frecuencia 56%",
+    "redes 29%",
+    "percepción 24%"
+   ]
+  },
+  {
+   "nombre": "Valparaíso",
+   "peso": 0.113,
+   "hogar": [
+    "interacción",
+    "cartografía",
+    "paisaje",
+    "arte sonoro",
+    "memoria sonora",
+    "espacialización"
+   ],
+   "top": [
+    "paisaje 59%",
+    "espacialización 45%",
+    "cartografía 38%",
+    "arte sonoro 37%"
+   ]
+  },
+  {
+   "nombre": "Santiago",
+   "peso": 0.123,
+   "hogar": [
+    "archivo digital",
+    "programación",
+    "redes",
+    "internet",
+    "net art",
+    "inteligencia artificial",
+    "aprendizaje automático",
+    "documentación"
+   ],
+   "top": [
+    "archivo digital 70%",
+    "aprendizaje automático 57%",
+    "programación 53%",
+    "documentación 48%"
+   ]
+  },
+  {
+   "nombre": "Concepción",
+   "peso": 0.098,
+   "hogar": [
+    "deriva",
+    "arte generativo",
+    "glitch",
+    "hardware",
+    "cibernética",
+    "experimentación"
+   ],
+   "top": [
+    "hardware 71%",
+    "cibernética 54%",
+    "arte generativo 45%",
+    "experimentación 35%"
+   ]
+  },
+  {
+   "nombre": "Temuco",
+   "peso": 0.09,
+   "hogar": [
+    "presencia",
+    "comunidad",
+    "conocimiento situado"
+   ],
+   "top": [
+    "conocimiento situado 59%",
+    "comunidad 40%",
+    "ancestralidad 22%",
+    "presencia 22%"
+   ]
+  },
+  {
+   "nombre": "Valdivia",
+   "peso": 0.083,
+   "hogar": [
+    "naturaleza",
+    "bioarte",
+    "resonancia",
+    "escucha"
+   ],
+   "top": [
+    "resonancia 58%",
+    "bioarte 47%",
+    "arte sonoro 35%",
+    "naturaleza 34%"
+   ]
+  },
+  {
+   "nombre": "Chiloé",
+   "peso": 0.119,
+   "hogar": [
+    "memoria",
+    "archivo vivo",
+    "corporalidad",
+    "oralidad"
+   ],
+   "top": [
+    "archivo vivo 66%",
+    "corporalidad 46%",
+    "oralidad 39%",
+    "comunidad 34%"
+   ]
+  },
+  {
+   "nombre": "Punta Arenas",
+   "peso": 0.063,
+   "hogar": [
+    "ancestralidad",
+    "ecosistema",
+    "futuros"
+   ],
+   "top": [
+    "ecosistema 45%",
+    "futuros 40%",
+    "naturaleza 34%",
+    "ancestralidad 24%"
+   ]
+  }
+ ],
+ "volumen": {
+  "valores": [
+   [
+    "archivo",
+    "acción",
+    "materia",
+    "sonido",
+    "código"
+   ],
+   [
+    "memoria",
+    "cuerpo",
+    "ecología",
+    "percepción",
+    "sistemas"
+   ],
+   [
+    "red",
+    "cuerpo",
+    "territorio",
+    "espacio",
+    "laboratorio"
+   ]
+  ],
+  "ocupadas": 8,
+  "posibles": 125
+ },
+ "sonido": [
+  {
+   "name": "memoria",
+   "rels": 13,
+   "bpm": 180,
+   "hz": 1731
+  },
+  {
+   "name": "archivo",
+   "rels": 9,
+   "bpm": 180,
+   "hz": 1731
+  },
+  {
+   "name": "cuerpo",
+   "rels": 9,
+   "bpm": 179,
+   "hz": 1698
+  },
+  {
+   "name": "presencia",
+   "rels": 5,
+   "bpm": 128,
+   "hz": 489
+  },
+  {
+   "name": "cartografía",
+   "rels": 6,
+   "bpm": 119,
+   "hz": 392
+  },
+  {
+   "name": "corporalidad",
+   "rels": 3,
+   "bpm": 91,
+   "hz": 201
+  },
+  {
+   "name": "performance",
+   "rels": 3,
+   "bpm": 91,
+   "hz": 201
+  },
+  {
+   "name": "internet",
+   "rels": 3,
+   "bpm": 91,
+   "hz": 201
+  },
+  {
+   "name": "ritual",
+   "rels": 3,
+   "bpm": 86,
+   "hz": 176
+  },
+  {
+   "name": "oralidad",
+   "rels": 3,
+   "bpm": 86,
+   "hz": 176
+  },
+  {
+   "name": "redes",
+   "rels": 3,
+   "bpm": 86,
+   "hz": 176
+  },
+  {
+   "name": "archivo digital",
+   "rels": 2,
+   "bpm": 73,
+   "hz": 129
+  },
+  {
+   "name": "arte sonoro",
+   "rels": 2,
+   "bpm": 73,
+   "hz": 129
+  },
+  {
+   "name": "documentación",
+   "rels": 2,
+   "bpm": 73,
+   "hz": 129
+  },
+  {
+   "name": "archivo vivo",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "ancestralidad",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "paisaje",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "escucha",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "código",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "arte generativo",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "máquina",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "cibernética",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "inteligencia artificial",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "obsolescencia",
+   "rels": 2,
+   "bpm": 67,
+   "hz": 113
+  },
+  {
+   "name": "afecto",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "percepción",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 83
+  },
+  {
+   "name": "interacción",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "interfaz",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "comunidad",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "deriva",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "naturaleza",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "ecosistema",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "bioarte",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "materia",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "resonancia",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "memoria sonora",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "frecuencia",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "espacialización",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "espectro",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 83
+  },
+  {
+   "name": "programación",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "glitch",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "hardware",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "net art",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 83
+  },
+  {
+   "name": "aprendizaje automático",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 83
+  },
+  {
+   "name": "futuros",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 83
+  },
+  {
+   "name": "conocimiento situado",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 83
+  },
+  {
+   "name": "experimentación",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  },
+  {
+   "name": "laboratorio",
+   "rels": 1,
+   "bpm": 54,
+   "hz": 82
+  }
+ ]
+}

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Recorridos acumulados — estudio</title>
+<link rel="stylesheet" href="estudio.css"></head>
+<body>
+<script src="../vendor/p5.min.js"></script><script src="comun.js"></script>
+<script>
+// Recorridos acumulados: cada lectura del público deja una traza sobre el glosario. La
+// superposición compone una imagen colectiva del archivo; en rojo, una lectura con sus pasos.
+// Clic: agrega un recorrido nuevo.
+const FUENTES = ['20px "Instrument Serif"', 'italic 20px "Instrument Serif"', '300 12px "IBM Plex Mono"', '400 12px "IBM Plex Mono"'];
+const LECTURA = ['archivo', 'memoria', 'cuerpo', 'hardware', 'glitch', 'memoria sonora', 'escucha'];
+const sketch = p => {
+  const rnd = mulberry32(31);
+  let rutas = [];
+  const pos = [];
+  p.setup = () => {
+    const [w, h] = SIZE(); p.createCanvas(w, h); p.pixelDensity(STILL ? 2 : Math.min(devicePixelRatio, 2));
+    for (let k = 0; k < 30; k++) rutas.push(nuevaRuta());
+    layout();
+    if (STILL) p.noLoop();
+  };
+  function nuevaRuta() {
+    let cur = Math.floor(rnd() * 48);
+    const r = [cur], n = 3 + Math.floor(rnd() * 6);
+    for (let i = 0; i < n; i++) {
+      // tendencia a quedarse en la familia, con saltos ocasionales
+      const fam = CONCEPTOS[cur].family;
+      const pool = CONCEPTOS.filter(c => c.id !== cur && (rnd() < 0.62 ? c.family === fam : c.family !== fam));
+      cur = pool[Math.floor(rnd() * pool.length)].id; r.push(cur);
+    }
+    return r;
+  }
+  // Constelaciones por familia y relajación de cajas de texto para que ninguna palabra se tape.
+  function layout() {
+    const W = p.width, H = p.height, u = W / 1500;
+    const centers = { 'archivo': [0.17, 0.36], 'acción': [0.43, 0.33], 'materia': [0.76, 0.3], 'sonido': [0.22, 0.72], 'código': [0.64, 0.68] };
+    const cnt = {};
+    p.textFont('Instrument Serif');
+    CONCEPTOS.forEach(c => {
+      const n = (cnt[c.family] = (cnt[c.family] ?? 0) + 1) - 1;
+      const a = n * 2.39996, rr = Math.sqrt(n + 0.5) * 0.045;
+      p.textSize(17 * u);
+      pos[c.id] = { x: W * (centers[c.family][0] + Math.cos(a) * rr * 1.1), y: H * (centers[c.family][1] + Math.sin(a) * rr * 1.5),
+        w: p.textWidth(c.name) + 26 * u, h: 40 * u };
+    });
+    for (let it = 0; it < 300; it++) {
+      for (let i = 0; i < 48; i++) for (let j = i + 1; j < 48; j++) {
+        const A = pos[i], B = pos[j], ox = (A.w + B.w) / 2 - Math.abs(A.x - B.x), oy = (A.h + B.h) / 2 - Math.abs(A.y - B.y);
+        if (ox > 0 && oy > 0) {
+          if (ox / A.w < oy / A.h) { const sx = Math.sign(B.x - A.x || 1) * ox * 0.25; A.x -= sx; B.x += sx; }
+          else { const sy = Math.sign(B.y - A.y || 1) * oy * 0.25; A.y -= sy; B.y += sy; }
+        }
+      }
+      for (const q of pos) { q.x = Math.max(W * 0.05 + q.w / 2, Math.min(W * 0.95 - q.w / 2, q.x)); q.y = Math.max(H * 0.13, Math.min(H * 0.84, q.y)); }
+    }
+  }
+  function curva(pts) {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      p.bezier(p1.x, p1.y, p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6, p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6, p2.x, p2.y);
+    }
+  }
+  p.draw = () => {
+    const W = p.width, H = p.height, u = W / 1500;
+    p.background(PAL.paper);
+    const visitas = new Array(48).fill(0);
+    rutas.forEach(r => r.forEach(id => visitas[id]++));
+    // trazas (con leve desplazamiento por ruta para que se lean como hebras)
+    p.noFill();
+    rutas.forEach((r, k) => {
+      const off = ((k * 37) % 11 - 5) * 1.6 * u;
+      p.stroke(23, 23, 20, 40); p.strokeWeight((0.6 + (k % 3) * 0.35) * u);
+      curva(r.map(id => ({ x: pos[id].x + off, y: pos[id].y - off * 0.6 })));
+    });
+    const L = LECTURA.map(n => CONCEPTOS.find(c => c.name === n).id);
+    p.stroke(PAL.red); p.strokeWeight(1.8 * u); curva(L.map(id => pos[id]));
+    // anillos de frecuencia de paso
+    for (const c of CONCEPTOS) {
+      const v = visitas[c.id], q = pos[c.id];
+      p.noFill(); p.stroke(23, 23, 20, 60); p.strokeWeight(0.5 * u);
+      for (let k = 1; k <= Math.min(v, 8); k++) p.ellipse(q.x, q.y, q.w * 0.55 + k * 9 * u, (14 + k * 7) * u);
+    }
+    // palabras
+    p.textAlign(p.CENTER, p.CENTER);
+    for (const c of CONCEPTOS) {
+      const q = pos[c.id], fs = (13 + Math.min(visitas[c.id], 8) * 0.55) * u, hot = L.includes(c.id);
+      p.textFont('Instrument Serif'); p.textSize(fs);
+      const tw = p.textWidth(c.name);
+      p.noStroke(); p.fill(238, 237, 231, 235); p.rect(q.x - tw / 2 - 3 * u, q.y - fs * 0.5, tw + 6 * u, fs);
+      p.fill(hot ? PAL.red : PAL.ink); p.text(c.name, q.x, q.y - fs * 0.05);
+    }
+    // pasos de la lectura roja
+    L.forEach((id, i) => {
+      const q = pos[id];
+      p.noStroke(); p.fill(PAL.red); p.circle(q.x - 0, q.y - 17 * u, 13 * u);
+      p.fill(PAL.paper); p.textFont('IBM Plex Mono'); p.textSize(8 * u); p.text(String(i + 1), q.x, q.y - 17.5 * u);
+    });
+    p.textFont('IBM Plex Mono'); p.textSize(9 * u); p.textAlign(p.LEFT, p.TOP); p.fill(PAL.muted);
+    p.text(rutas.length + ' RECORRIDOS SIMULADOS SOBRE EL GLOSARIO', W * 0.04, H * 0.045);
+    p.textSize(8 * u); p.textAlign(p.LEFT, p.BOTTOM);
+    p.text('ANILLOS ← VECES QUE UN CONCEPTO FUE VISITADO     TAMAÑO ← FRECUENCIA DE PASO', W * 0.04, H * 0.975);
+    p.fill(PAL.red); p.text('—  UNA LECTURA: ' + LECTURA.join(' → ').toUpperCase(), W * 0.04, H * 0.975 - 15 * u);
+    for (const [x, y] of [[14 * u, 14 * u], [W - 14 * u, 14 * u], [14 * u, H - 14 * u], [W - 14 * u, H - 14 * u]]) marcaRegistro(p, x, y, 5 * u);
+    if (STILL) listo();
+  };
+  p.mousePressed = () => { rutas.push(nuevaRuta()); };
+  p.windowResized = () => { if (!STILL) { p.resizeCanvas(innerWidth, innerHeight); layout(); } };
+};
+Promise.all(FUENTES.map(f => document.fonts.load(f))).then(() => new p5(sketch));
+</script></body></html>

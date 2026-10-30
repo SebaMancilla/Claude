@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Vórtice del archivo — estudio</title>
+<link rel="stylesheet" href="estudio.css"></head>
+<body class="night">
+<script src="../vendor/p5.min.js"></script><script src="comun.js"></script>
+<script>
+// Vórtice del archivo: registros dispuestos en un embudo en perspectiva; los 48 conceptos
+// del glosario flotan en sus anillos. Arrastra para girar; rueda para acercar.
+const FUENTES = ['20px "Instrument Serif"', 'italic 20px "Instrument Serif"', '300 12px "IBM Plex Mono"', '400 12px "IBM Plex Mono"'];
+const PARES = [['memoria', 'glitch'], ['hardware', 'cuerpo'], ['cibernética', 'ritual'], ['archivo', 'naturaleza'],
+  ['oralidad', 'redes'], ['arte generativo', 'ecosistema'], ['inteligencia artificial', 'ancestralidad'],
+  ['cartografía', 'memoria sonora'], ['máquina', 'afecto'], ['obsolescencia', 'archivo vivo'], ['memoria', 'cuerpo'],
+  ['paisaje', 'frecuencia'], ['archivo', 'archivo vivo'], ['archivo', 'documentación'], ['escucha', 'arte sonoro'],
+  ['código', 'programación'], ['interfaz', 'interacción'], ['redes', 'internet'], ['laboratorio', 'experimentación']];
+const VISITANTE = [['cuerpo', 'archivo vivo'], ['oralidad', 'código']];
+
+const sketch = p => {
+  let pts = [], words = [], spin = 0.35, tilt = -0.2, zoom = 0.8, last = null;
+  const r = mulberry32(48);
+  p.setup = () => {
+    const [w, h] = SIZE();
+    p.createCanvas(w, h);
+    p.pixelDensity(STILL ? 2 : Math.min(devicePixelRatio, 2));
+    const spokes = 150;
+    for (let k = 0; k < 64; k++) {
+      const rr = 0.3 + Math.pow(k / 63, 1.05) * 0.8;
+      for (let s = 0; s < spokes; s++) {
+        if (r() > 0.3 + 0.45 * rr) continue;
+        const th = (s + (r() - 0.5) * 0.35) / spokes * Math.PI * 2;
+        const u = r();
+        pts.push({ rr: rr + (r() - 0.5) * 0.012, th, w: 0.5 + r() * 1.6, h: 0.5 + r() * 1.4,
+          tone: u < 0.035 ? 'red' : u < 0.5 ? 'paper' : u < 0.82 ? 'grey' : 'warm', a: 0.35 + r() * 0.65 });
+      }
+    }
+    CONCEPTOS.forEach((c, i) => {
+      const ring = 0.46 + ((i * 7) % 48) / 48 * 0.62;
+      words.push({ ...c, rr: ring, th: (i * 2.39996) % (Math.PI * 2) });
+    });
+    if (STILL) { p.noLoop(); }
+  };
+  // Embudo: los anillos interiores se alejan en z; vista girada levemente.
+  function project(rr, th) {
+    const x = rr * Math.cos(th + spin), y = rr * Math.sin(th + spin) * 0.96;
+    const z = -1.15 * (1 / rr - 1);
+    const ca = Math.cos(tilt), sa = Math.sin(tilt);
+    const X = x * ca + z * sa, Z = -x * sa + z * ca;
+    const cb = Math.cos(0.12), sb = Math.sin(0.12);
+    const Y = y * cb - Z * sb, Z2 = y * sb + Z * cb;
+    const D = 2.3, s = D / (D - Z2);
+    const R = Math.min(p.width, p.height) * 0.5 * zoom;
+    return { x: p.width * 0.655 + X * s * R, y: p.height * 0.5 + Y * s * R, s, z: Z2 };
+  }
+  p.draw = () => {
+    if (!STILL) spin += p.deltaTime * 0.000035;
+    p.background(PAL.night);
+    const ctx = p.drawingContext;
+    const P = pts.map(q => ({ q, ...project(q.rr, q.th) })).sort((a, b) => a.z - b.z);
+    p.noStroke();
+    for (const { q, x, y, s } of P) {
+      const depth = Math.min(1, Math.max(0.12, (s - 0.25) / 0.8));
+      const col = q.tone === 'red' ? [201, 36, 28] : q.tone === 'paper' ? [238, 237, 231] : q.tone === 'grey' ? [150, 148, 140] : [214, 196, 168];
+      p.fill(col[0], col[1], col[2], 255 * q.a * depth);
+      const k = Math.min(p.width, p.height) / 1000 * 3.1 * s;
+      p.rect(x, y, q.w * k, q.h * k);
+    }
+    // vínculos entre conceptos
+    const base = Math.min(p.width, p.height) / 1000;
+    const W = placeWords(base);
+    for (const [i, [a, b]] of PARES.entries()) {
+      const A = W[a], B = W[b]; if (!A || !B) continue;
+      ctx.setLineDash(i < 12 ? [2 * base, 5 * base] : []);
+      p.stroke(238, 237, 231, 70); p.strokeWeight(0.7 * base);
+      p.line(A.x, A.y, B.x, B.y);
+    }
+    ctx.setLineDash([]);
+    for (const [a, b] of VISITANTE) {
+      const A = W[a], B = W[b]; p.stroke(201, 36, 28, 220); p.strokeWeight(1.1 * base); p.line(A.x, A.y, B.x, B.y);
+    }
+    // palabras
+    p.textAlign(p.CENTER, p.CENTER);
+    for (const wd of Object.values(W).sort((a, b) => a.z - b.z)) {
+      const fs = wd.fs;
+      const alpha = 255 * Math.min(1, Math.max(0.25, (wd.s - 0.3) / 0.75));
+      p.textFont('Instrument Serif'); p.textSize(fs);
+      const tw = p.textWidth(wd.name);
+      p.noStroke(); p.fill(11, 11, 10, 200); p.rect(wd.x - tw / 2 - 3 * base, wd.y - fs * 0.5, tw + 6 * base, fs);
+      const hot = wd.name === 'archivo vivo';
+      p.fill(hot ? p.color(201, 36, 28) : p.color(238, 237, 231, alpha)); p.text(wd.name, wd.x, wd.y - fs * 0.06);
+      p.textFont('IBM Plex Mono'); p.textSize(Math.max(5, 5.5 * base * wd.s)); p.textAlign(p.LEFT, p.BOTTOM);
+      p.fill(hot ? p.color(201, 36, 28) : p.color(150, 148, 140, alpha * 0.8));
+      p.text(String(wd.id + 1).padStart(3, '0'), wd.x - tw / 2, wd.y - fs * 0.52);
+      p.textAlign(p.CENTER, p.CENTER);
+      if (hot) {
+        p.noFill(); p.stroke(201, 36, 28); p.strokeWeight(1.2 * base);
+        p.circle(wd.x, wd.y, tw + 34 * base);
+        p.line(wd.x + tw / 2 + 17 * base, wd.y, wd.x + tw / 2 + 70 * base, wd.y - 40 * base);
+        p.noStroke(); p.fill(11, 11, 10, 220); p.rect(wd.x + tw / 2 + 70 * base, wd.y - 66 * base, 150 * base, 30 * base);
+        p.fill(201, 36, 28); p.textFont('IBM Plex Mono'); p.textSize(8.5 * base); p.textAlign(p.LEFT, p.BOTTOM);
+        p.text('003 · ARCHIVO VIVO\nARCHIVO / MEMORIA / RED', wd.x + tw / 2 + 74 * base, wd.y - 38 * base);
+        p.textAlign(p.CENTER, p.CENTER);
+      }
+    }
+    // marcas de registro
+    const m = 26 * base;
+    for (const [x, y] of [[m, m], [p.width - m, m], [m, p.height - m], [p.width - m, p.height - m]]) marcaRegistro(p, x, y, 7 * base, '#55554f');
+    if (STILL) listo();
+  };
+  // Ubica cada palabra en su anillo y la desplaza por el anillo hasta que no choque con otra.
+  function placeWords(base) {
+    const placed = [], W = {};
+    p.textFont('Instrument Serif');
+    const hot = wd => wd.name === 'archivo vivo';
+    const order = words.slice().sort((a, b) => hot(b) - hot(a) || (b.id % 9 === 0) - (a.id % 9 === 0) || a.id - b.id);
+    for (const wd of order) {
+      let best = null;
+      for (let k = 0; k < 90; k++) {
+        const th = wd.th + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.035;
+        const pr = project(wd.rr, th);
+        const fs = (11 + (wd.id % 9 === 0 ? 9 : wd.id % 4 === 0 ? 4 : 0)) * base * 1.55 * pr.s;
+        p.textSize(fs);
+        const tw = p.textWidth(wd.name);
+        const box = [pr.x - tw / 2 - 8 * base, pr.y - fs * 0.9, pr.x + tw / 2 + 8 * base, pr.y + fs * 0.6];
+        const hit = placed.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1]);
+        const out = box[0] < 30 * base || box[2] > p.width - 30 * base || box[1] < 30 * base || box[3] > p.height - 30 * base;
+        best = { ...wd, ...pr, fs, box };
+        if (!hit && !out) break;
+      }
+      placed.push(best.box); W[wd.name] = best;
+      if (hot(wd)) {
+        const x0 = best.box[2];
+        placed.push([best.box[0] - 20 * base, best.box[1] - 20 * base, best.box[2] + 20 * base, best.box[3] + 20 * base],
+          [x0, best.y - 75 * base, x0 + 230 * base, best.y - 5 * base]);
+      }
+    }
+    return W;
+  }
+  p.mouseDragged = () => { if (last) { spin += (p.mouseX - last[0]) * 0.004; tilt = Math.max(-0.9, Math.min(0.5, tilt + (p.mouseY - last[1]) * 0.002)); } last = [p.mouseX, p.mouseY]; };
+  p.mouseReleased = () => { last = null; };
+  p.mouseWheel = e => { zoom = Math.max(0.5, Math.min(2.2, zoom * (1 - e.delta * 0.001))); return false; };
+  p.windowResized = () => { if (!STILL) p.resizeCanvas(innerWidth, innerHeight); };
+};
+Promise.all(FUENTES.map(f => document.fonts.load(f))).then(() => new p5(sketch));
+</script></body></html>

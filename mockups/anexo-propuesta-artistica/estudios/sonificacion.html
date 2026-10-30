@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Sonificación: partitura del barrido — estudio</title>
+<link rel="stylesheet" href="estudio.css"></head>
+<body>
+<script src="../vendor/p5.min.js"></script><script src="comun.js"></script>
+<script>
+// Partitura del barrido: cada vuelta del radar recorre los 48 conceptos y los hace sonar con las
+// correspondencias del prototipo (altura por concepto en una escala de 8 grados y 3 octavas,
+// timbre triangular para la familia «código», panorama según la posición en pantalla).
+// Haz clic para escuchar.
+const FUENTES = ['20px "Instrument Serif"', 'italic 20px "Instrument Serif"', '300 12px "IBM Plex Mono"', '400 12px "IBM Plex Mono"'];
+const PERIODO = 28.6;              // segundos por vuelta (2π / 0.22 rad/s del prototipo)
+const INTERES = ['memoria', 'cuerpo', 'archivo', 'glitch', 'documentación', 'escucha'];
+const sketch = p => {
+  const rnd = mulberry32(7);
+  const notas = CONCEPTOS.map(c => ({ ...c, t: ((c.id * 0.61803) % 1) * PERIODO, pan: rnd() * 1.7 - 0.85,
+    tri: c.family === 'código', fuerte: INTERES.includes(c.name) }));
+  let t0 = 17.2, audio = null, lastT = t0;
+  const alturas = [...new Set(CONCEPTOS.map(c => semitono(c.id)))].sort((a, b) => a - b);
+  p.setup = () => { const [w, h] = SIZE(); p.createCanvas(w, h); p.pixelDensity(STILL ? 2 : Math.min(devicePixelRatio, 2)); if (STILL) p.noLoop(); };
+  p.draw = () => {
+    const W = p.width, H = p.height, u = W / 1500;
+    const x0 = W * 0.1, x1 = W * 0.965, yTop = H * 0.27, yBot = H * 0.76;
+    const X = t => p.map(t, 0, PERIODO, x0, x1);
+    const Y = s => p.map(s, 0, 41, yBot, yTop);
+    if (!STILL) t0 = (t0 + p.deltaTime / 1000) % PERIODO;
+    p.background(PAL.paper);
+    // pentagrama de alturas
+    p.textFont('IBM Plex Mono'); p.textSize(7.5 * u); p.textAlign(p.RIGHT, p.CENTER);
+    for (const s of alturas) {
+      p.stroke(23, 23, 20, s % 12 === 0 ? 70 : 28); p.strokeWeight(0.6 * u); p.line(x0, Y(s), x1, Y(s));
+      p.noStroke(); p.fill(PAL.muted); p.text(Math.round(110 * Math.pow(2, s / 12)) + ' Hz', x0 - 10 * u, Y(s));
+    }
+    // compases (segundos)
+    for (let s = 0; s <= PERIODO; s += 2) {
+      p.stroke(23, 23, 20, s % 10 === 0 ? 60 : 20); p.line(X(s), yTop - 12 * u, X(s), yBot + 10 * u);
+      if (s % 4 === 0) { p.noStroke(); p.fill(PAL.muted); p.textAlign(p.CENTER, p.TOP); p.text(s + ' s', X(s), yBot + 14 * u); }
+    }
+    // envolventes y notas
+    for (const n of notas) {
+      const x = X(n.t), y = Y(semitono(n.id)), amp = (n.fuerte ? 0.6 : 0.22), len = X(0.95) - X(0);
+      const hot = n.fuerte;
+      p.noStroke(); p.fill(hot ? p.color(201, 36, 28, 46) : p.color(23, 23, 20, 22));
+      p.beginShape(); p.vertex(x, y);
+      for (let k = 0; k <= 24; k++) { const f = k / 24; p.vertex(x + f * len, y - amp * 26 * u * Math.exp(-4.5 * f)); }
+      for (let k = 24; k >= 0; k--) { const f = k / 24; p.vertex(x + f * len, y + amp * 26 * u * Math.exp(-4.5 * f)); }
+      p.endShape(p.CLOSE);
+      p.fill(hot ? PAL.red : PAL.ink);
+      const r = (hot ? 7.5 : 5) * u;
+      if (n.tri) p.triangle(x - r * 0.6, y + r * 0.55, x + r * 0.75, y, x - r * 0.6, y - r * 0.55); else p.circle(x, y, r * 1.3);
+      p.textFont('Instrument Serif'); p.textStyle(p.ITALIC); p.textSize((hot ? 13 : 10) * u); p.textAlign(p.LEFT, p.BOTTOM);
+      p.fill(hot ? PAL.red : p.color(23, 23, 20, 190)); p.text(n.name, x + 3 * u, y - 6 * u);
+      p.textStyle(p.NORMAL);
+    }
+    // panorama
+    const yp = H * 0.865;
+    p.stroke(PAL.ink); p.strokeWeight(0.6 * u); p.line(x0, yp, x1, yp);
+    for (const n of notas) { p.stroke(n.fuerte ? PAL.red : p.color(23, 23, 20, 150)); p.line(X(n.t), yp, X(n.t), yp - n.pan * 22 * u); }
+    p.noStroke(); p.fill(PAL.muted); p.textFont('IBM Plex Mono'); p.textSize(7.5 * u); p.textAlign(p.RIGHT, p.CENTER);
+    p.text('IZQ', x0 - 10 * u, yp + 16 * u); p.text('DER', x0 - 10 * u, yp - 16 * u); p.text('PANORAMA', x0 - 10 * u, yp);
+    // señal resultante cerca del cabezal
+    const ys = H * 0.15;
+    p.noFill(); p.stroke(PAL.red); p.strokeWeight(0.9 * u); p.beginShape();
+    for (let x = x0; x <= x1; x += 1.2 * u) {
+      const t = p.map(x, x0, x1, 0, PERIODO);
+      let v = 0;
+      for (const n of notas) { const dt = t - n.t; if (dt >= 0 && dt < 1) v += (n.fuerte ? 0.6 : 0.22) * Math.exp(-4.5 * dt) * Math.sin(dt * frecuencia(n.id) * 0.9); }
+      p.vertex(x, ys - v * 34 * u);
+    }
+    p.endShape();
+    p.noStroke(); p.fill(PAL.muted); p.textAlign(p.RIGHT, p.CENTER); p.text('SEÑAL', x0 - 10 * u, ys);
+    // cabezal
+    const xh = X(t0);
+    p.stroke(201, 36, 28, 200); p.strokeWeight(1.2 * u); p.line(xh, ys - 46 * u, xh, yp + 26 * u);
+    p.noStroke(); p.fill(PAL.red); p.textAlign(p.LEFT, p.TOP); p.text('BARRIDO · t = ' + t0.toFixed(1) + ' s', xh + 6 * u, ys - 46 * u);
+    // encabezado y leyenda
+    p.fill(PAL.muted); p.textAlign(p.LEFT, p.TOP); p.textSize(9 * u);
+    p.text('PARTITURA DE UNA VUELTA DEL RADAR · 48 CONCEPTOS · 28,6 s', x0, H * 0.045);
+    p.textSize(8 * u); p.textAlign(p.LEFT, p.BOTTOM);
+    p.text('ALTURA ← CONCEPTO (ESCALA DE 8 GRADOS, 3 OCTAVAS, BASE 110 HZ)     TIMBRE ← FAMILIA (● SENO  ▶ TRIÁNGULO «CÓDIGO»)     PANORAMA ← POSICIÓN EN PANTALLA     INTENSIDAD ← PROXIMIDAD AL INTERÉS', x0, H * 0.975);
+    for (const [x, y] of [[14 * u, 14 * u], [W - 14 * u, 14 * u], [14 * u, H - 14 * u], [W - 14 * u, H - 14 * u]]) marcaRegistro(p, x, y, 5 * u);
+    if (audio) {
+      for (const n of notas) if ((lastT <= n.t && n.t < t0) || (t0 < lastT && (n.t >= lastT || n.t < t0))) tono(n);
+      lastT = t0;
+    }
+    if (STILL) listo();
+  };
+  function tono(n) {
+    const t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain(), pan = audio.createStereoPanner();
+    o.type = n.tri ? 'triangle' : 'sine'; o.frequency.value = frecuencia(n.id); pan.pan.value = n.pan;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05 * (n.fuerte ? 0.6 : 0.22) / 0.22, t + 0.025);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.95);
+    o.connect(g); g.connect(pan); pan.connect(audio.destination); o.start(t); o.stop(t + 1);
+  }
+  p.mousePressed = () => { if (!audio) { audio = new AudioContext(); lastT = t0; } else { audio.close(); audio = null; } };
+  p.windowResized = () => { if (!STILL) p.resizeCanvas(innerWidth, innerHeight); };
+};
+Promise.all(FUENTES.map(f => document.fonts.load(f))).then(() => new p5(sketch));
+</script></body></html>

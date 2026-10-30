@@ -1,0 +1,11 @@
+@font-face{font-family:'Instrument Serif';src:url(../assets/fonts/InstrumentSerif-Regular.ttf)}
+@font-face{font-family:'Instrument Serif';font-style:italic;src:url(../assets/fonts/InstrumentSerif-Italic.ttf)}
+@font-face{font-family:'IBM Plex Mono';font-weight:400;src:url(../assets/fonts/IBMPlexMono-Regular.ttf)}
+@font-face{font-family:'IBM Plex Mono';font-weight:300;src:url(../assets/fonts/IBMPlexMono-Light.ttf)}
+@font-face{font-family:'Newsreader';src:url(../assets/fonts/Newsreader-Regular.ttf)}
+@font-face{font-family:'Newsreader';font-style:italic;src:url(../assets/fonts/Newsreader-Italic.ttf)}
+html,body{margin:0;height:100%;overflow:hidden;background:#eeede7}
+body.night{background:#0b0b0a}
+canvas{display:block}
+.fontload{position:absolute;opacity:0;pointer-events:none;font-family:'Instrument Serif'}
+.fontload i{font-family:'Instrument Serif';font-style:italic}.fontload b{font-family:'IBM Plex Mono';font-weight:400}.fontload s{font-family:'IBM Plex Mono';font-weight:300}.fontload u{font-family:'Newsreader'}

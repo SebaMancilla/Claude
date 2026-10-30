@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Temporalización: reloj del archivo — estudio</title>
+<link rel="stylesheet" href="estudio.css"></head>
+<body>
+<script src="../vendor/p5.min.js"></script><script src="comun.js"></script>
+<script>
+// Reloj del archivo: el ángulo es el año, cada anillo una técnica. Los registros sin fecha no
+// desaparecen: quedan visibles, vacíos, en el sector superior. Las cuerdas unen registros que
+// comparten tema; en rojo, un recorrido cronológico por «memoria».
+// Mueve el cursor alrededor del círculo para recorrer los años.
+const FUENTES = ['20px "Instrument Serif"', 'italic 20px "Instrument Serif"', '300 12px "IBM Plex Mono"', '400 12px "IBM Plex Mono"'];
+const sketch = p => {
+  const R = registrosDemo();
+  const Y0 = 1965, Y1 = 2025, GAP = 0.62;   // radianes reservados para «sin fecha»
+  let cursorYear = 2003;
+  p.setup = () => { const [w, h] = SIZE(); p.createCanvas(w, h); p.pixelDensity(STILL ? 2 : Math.min(devicePixelRatio, 2)); if (STILL) p.noLoop(); };
+  p.draw = () => {
+    const W = p.width, H = p.height, u = Math.min(W, H) / 1000, cx = W / 2, cy = H / 2 + 10 * u, RAD = Math.min(W, H) * 0.4;
+    const ang = y => -Math.PI / 2 + GAP / 2 + (y - Y0) / (Y1 - Y0) * (Math.PI * 2 - GAP);
+    const ring = t => RAD * (0.3 + TECNICAS.indexOf(t) / (TECNICAS.length - 1) * 0.6);
+    const pos = (r, i) => {
+      if (r.anio === null) {
+        const a = -Math.PI / 2 + GAP * (0.1 + r.j * 0.32);
+        return { x: cx + Math.cos(a) * ring(r.tecnica), y: cy + Math.sin(a) * ring(r.tecnica), vacio: true };
+      }
+      const a = ang(r.anio + (r.k - 0.5) * 0.8);
+      return { x: cx + Math.cos(a) * ring(r.tecnica), y: cy + Math.sin(a) * ring(r.tecnica), vacio: false };
+    };
+    if (!STILL && p.dist(p.mouseX, p.mouseY, cx, cy) > RAD * 0.25) {
+      let a = Math.atan2(p.mouseY - cy, p.mouseX - cx) + Math.PI / 2 - GAP / 2;
+      a = (a + Math.PI * 4) % (Math.PI * 2);
+      cursorYear = Math.round(Y0 + Math.min(1, a / (Math.PI * 2 - GAP)) * (Y1 - Y0));
+    }
+    p.background(PAL.paper);
+    const P = R.map(pos);
+    // anillos
+    p.noFill();
+    for (const t of TECNICAS) {
+      p.stroke(23, 23, 20, 40); p.strokeWeight(0.6 * u);
+      p.arc(cx, cy, ring(t) * 2, ring(t) * 2, ang(Y0), ang(Y1));
+      p.drawingContext.setLineDash([1.5 * u, 4 * u]);
+      p.arc(cx, cy, ring(t) * 2, ring(t) * 2, ang(Y1), ang(Y0) + Math.PI * 2);
+      p.drawingContext.setLineDash([]);
+    }
+    // décadas
+    p.textFont('IBM Plex Mono'); p.textSize(9 * u); p.textAlign(p.CENTER, p.CENTER);
+    for (let y = 1970; y <= 2020; y += 10) {
+      const a = ang(y);
+      p.stroke(23, 23, 20, 55); p.line(cx + Math.cos(a) * RAD * 0.24, cy + Math.sin(a) * RAD * 0.24, cx + Math.cos(a) * RAD * 1.02, cy + Math.sin(a) * RAD * 1.02);
+      p.noStroke(); p.fill(PAL.muted); p.text(String(y), cx + Math.cos(a) * RAD * 1.2, cy + Math.sin(a) * RAD * 1.2);
+    }
+    // histograma exterior (registros por año)
+    const cnt = {}; R.forEach(r => { if (r.anio) cnt[r.anio] = (cnt[r.anio] ?? 0) + 1; });
+    p.stroke(PAL.ink); p.strokeWeight(2.4 * u); p.strokeCap(p.SQUARE);
+    for (const [y, n] of Object.entries(cnt)) {
+      const a = ang(Number(y)), r0 = RAD * 1.04;
+      p.line(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0, cx + Math.cos(a) * (r0 + n * 11 * u), cy + Math.sin(a) * (r0 + n * 11 * u));
+    }
+    p.strokeCap(p.ROUND);
+    // cuerdas por tema
+    const byTema = {};
+    R.forEach((r, i) => { if (r.anio) (byTema[r.tema] ??= []).push(i); });
+    for (const [tema, ids] of Object.entries(byTema)) {
+      ids.sort((a, b) => R[a].anio - R[b].anio);
+      const hot = tema === 'memoria';
+      p.noFill(); p.stroke(hot ? p.color(201, 36, 28, 210) : p.color(23, 23, 20, 38)); p.strokeWeight((hot ? 1.3 : 0.7) * u);
+      for (let k = 1; k < ids.length; k++) {
+        const a = P[ids[k - 1]], b = P[ids[k]];
+        const mx = cx + ((a.x + b.x) / 2 - cx) * 0.5, my = cy + ((a.y + b.y) / 2 - cy) * 0.5;
+        // curva cuadrática expresada como cúbica (p5 2 no tiene quadraticVertex)
+        p.bezier(a.x, a.y, a.x + (mx - a.x) * 2 / 3, a.y + (my - a.y) * 2 / 3, b.x + (mx - b.x) * 2 / 3, b.y + (my - b.y) * 2 / 3, b.x, b.y);
+      }
+    }
+    // registros
+    R.forEach((r, i) => {
+      const q = P[i], s = 7.5 * u, near = !q.vacio && Math.abs(r.anio - cursorYear) <= 2;
+      const hot = r.tema === 'memoria' && !q.vacio;
+      if (q.vacio) { p.drawingContext.setLineDash([1.5 * u, 2 * u]); p.noFill(); p.stroke(PAL.ink); p.strokeWeight(0.8 * u); }
+      else { p.noStroke(); p.fill(hot ? PAL.red : PAL.ink); }
+      const k = near ? 1.6 : 1;
+      if (r.colectivo) p.rect(q.x - s * k / 2, q.y - s * k / 2, s * k, s * k); else p.circle(q.x, q.y, s * k);
+      p.drawingContext.setLineDash([]);
+    });
+    // cursor temporal
+    const ac = ang(cursorYear);
+    p.stroke(201, 36, 28, 140); p.strokeWeight(0.9 * u); p.drawingContext.setLineDash([3 * u, 4 * u]);
+    p.line(cx, cy, cx + Math.cos(ac) * RAD * 1.08, cy + Math.sin(ac) * RAD * 1.08); p.drawingContext.setLineDash([]);
+    p.noStroke(); p.fill(PAL.red); p.textSize(10 * u); p.textAlign(p.LEFT, p.CENTER);
+    p.text(String(cursorYear), cx + Math.cos(ac) * RAD * 1.1 + 4 * u, cy + Math.sin(ac) * RAD * 1.1);
+    // etiquetas de anillos en el sector vacío
+    p.textFont('Instrument Serif'); p.textStyle(p.ITALIC); p.textAlign(p.RIGHT, p.CENTER); p.fill(PAL.ink);
+    for (const t of TECNICAS) { p.textSize(12.5 * u); p.text(t, cx - 10 * u, cy - ring(t)); }
+    p.textStyle(p.NORMAL);
+    p.textFont('IBM Plex Mono'); p.textSize(8 * u); p.fill(PAL.muted); p.textAlign(p.LEFT, p.CENTER);
+    p.text('SIN FECHA', cx + 12 * u, cy - RAD * 0.97);
+    // centro
+    p.textAlign(p.CENTER, p.CENTER); p.textSize(8.5 * u);
+    p.text('1965 — 2024', cx, cy - 6 * u); p.text('59 REGISTROS', cx, cy + 8 * u);
+    p.textAlign(p.LEFT, p.TOP); p.textSize(8 * u);
+    p.text('ÁNGULO ← AÑO     ANILLO ← TÉCNICA     CUERDA ← TEMA COMPARTIDO     ○ DATO AUSENTE', 24 * u, H - 34 * u);
+    p.fill(PAL.red); p.text('—  RECORRIDO CRONOLÓGICO POR «MEMORIA»', 24 * u, H - 20 * u);
+    for (const [x, y] of [[14 * u, 14 * u], [W - 14 * u, 14 * u], [14 * u, H - 14 * u], [W - 14 * u, H - 14 * u]]) marcaRegistro(p, x, y, 5 * u);
+    if (STILL) listo();
+  };
+  p.windowResized = () => { if (!STILL) p.resizeCanvas(innerWidth, innerHeight); };
+};
+Promise.all(FUENTES.map(f => document.fonts.load(f))).then(() => new p5(sketch));
+</script></body></html>

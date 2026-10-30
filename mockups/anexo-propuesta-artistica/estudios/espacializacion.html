@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Espacialización: dos lecturas — estudio</title>
+<link rel="stylesheet" href="estudio.css"></head>
+<body>
+<script src="../vendor/p5.min.js"></script><script src="comun.js"></script>
+<script>
+// Dos lecturas del mismo conjunto: la distribución territorial documentada (izquierda) y una
+// proximidad conceptual propuesta (derecha). Las curvas muestran la traducción entre ambas:
+// la cercanía visual de la derecha no equivale a cercanía geográfica.
+// Pasa el cursor sobre un registro para seguir su traslado.
+const FUENTES = ['20px "Instrument Serif"', 'italic 20px "Instrument Serif"', '300 12px "IBM Plex Mono"', '400 12px "IBM Plex Mono"'];
+const sketch = p => {
+  const R = registrosDemo();
+  const DEST = [21, 7, 38, 49];  // registros destacados en rojo
+  let hover = null;
+  p.setup = () => { const [w, h] = SIZE(); p.createCanvas(w, h); p.pixelDensity(STILL ? 2 : Math.min(devicePixelRatio, 2)); if (STILL) p.noLoop(); };
+  function posiciones() {
+    const W = p.width, H = p.height, top = H * 0.14, bot = H * 0.86;
+    const latY = lat => p.map(lat, -17, -55, top + H * 0.08, bot - H * 0.08);
+    // Valparaíso y Santiago casi comparten latitud: se separan levemente para leerlas.
+    const cityY = c => latY(CIUDADES.find(k => k[0] === c)[1]) + (c === 'Valparaíso' ? -16 : c === 'Santiago' ? 6 : 0) * (W / 1500);
+    const axisX = W * 0.17;
+    const seen = {};
+    const left = R.map(r => {
+      const key = r.ciudad ?? 'sin';
+      const n = (seen[key] = (seen[key] ?? 0) + 1) - 1;
+      const dx = (n % 9) * 9 * (W / 1500) + 14 * (W / 1500), dy = Math.floor(n / 9) * 9 * (W / 1500);
+      if (r.ciudad === null) return { x: axisX + dx, y: bot + H * 0.035 + dy, ausente: true };
+      if (r.ciudad === 'extranjero') return { x: axisX + dx, y: top + dy, ausente: false };
+      return { x: axisX + dx, y: cityY(r.ciudad) + dy - 4, ausente: false };
+    });
+    // centros de técnica en una constelación libre
+    const C = {};
+    const POS = { 'electrónica': [0.885, 0.6], 'código': [0.78, 0.77], 'sonido': [0.635, 0.76], 'video': [0.6, 0.5],
+      'bioarte': [0.625, 0.27], 'instalación': [0.725, 0.2], 'net art': [0.85, 0.2], 'performance': [0.8, 0.43] };
+    TECNICAS.forEach(t => { C[t] = { x: W * POS[t][0], y: H * POS[t][1] }; });
+    const cnt = {};
+    const right = R.map(r => {
+      const n = (cnt[r.tecnica] = (cnt[r.tecnica] ?? 0) + 1) - 1;
+      const a = n * 2.39996, rr = Math.sqrt(n + 0.6) * 11 * (W / 1500);
+      return { x: C[r.tecnica].x + Math.cos(a) * rr, y: C[r.tecnica].y + Math.sin(a) * rr };
+    });
+    return { left, right, C, latY, cityY, axisX, top, bot };
+  }
+  function marca(r, x, y, s, col, ausente) {
+    if (ausente) { p.drawingContext.setLineDash([1.5, 2]); p.noFill(); p.stroke(col); p.strokeWeight(0.8); }
+    else { p.noStroke(); p.fill(col); }
+    if (r.colectivo) p.rect(x - s / 2, y - s / 2, s, s); else p.circle(x, y, s);
+    p.drawingContext.setLineDash([]);
+  }
+  p.draw = () => {
+    const W = p.width, H = p.height, u = W / 1500;
+    p.background(PAL.paper);
+    const { left, right, C, latY, cityY, axisX, top, bot } = posiciones();
+    if (!STILL) {
+      hover = null;
+      R.forEach((r, i) => { for (const q of [left[i], right[i]]) if (Math.hypot(p.mouseX - q.x, p.mouseY - q.y) < 7) hover = i; });
+    }
+    const red = i => hover === null ? DEST.includes(i) : hover === i;
+    // eje territorial
+    p.stroke(PAL.ink); p.strokeWeight(0.8); p.line(axisX, latY(-17), axisX, latY(-55));
+    p.textFont('IBM Plex Mono'); p.textSize(8.5 * u); p.noStroke(); p.fill(PAL.muted); p.textAlign(p.RIGHT, p.CENTER);
+    for (const [c, lat] of CIUDADES) { p.stroke(PAL.ink); p.line(axisX - 5 * u, latY(lat), axisX, latY(lat)); p.noStroke(); p.text(c.toUpperCase(), axisX - 9 * u, cityY(c)); }
+    for (let l = -20; l >= -55; l -= 5) { p.fill(PAL.line); p.text(l + '°', axisX - 112 * u, latY(l)); }
+    p.fill(PAL.muted);
+    p.text('FUERA DE CHILE', axisX - 9 * u, top); p.text('SIN DATO', axisX - 9 * u, bot + H * 0.035);
+    // traducciones
+    R.forEach((r, i) => {
+      const a = left[i], b = right[i], hot = red(i);
+      p.noFill(); p.stroke(hot ? p.color(201, 36, 28, 230) : p.color(23, 23, 20, hover === null ? 40 : 18)); p.strokeWeight(hot ? 1.3 * u : 0.7 * u);
+      if (left[i].ausente) p.drawingContext.setLineDash([2, 4]);
+      p.bezier(a.x, a.y, W * 0.42, a.y, W * 0.48, b.y, b.x, b.y);
+      p.drawingContext.setLineDash([]);
+    });
+    // afinidades por tema dentro de la lectura conceptual (punteadas)
+    p.drawingContext.setLineDash([2, 5]); p.stroke(23, 23, 20, 85); p.strokeWeight(0.6 * u);
+    R.forEach((r, i) => { if (i % 3) return; const j = R.findIndex((s, k) => k > i && s.tema === r.tema && s.tecnica !== r.tecnica && (s.id + r.id) % 4 === 0); if (j > 0) p.line(right[i].x, right[i].y, right[j].x, right[j].y); });
+    p.drawingContext.setLineDash([]);
+    // marcas
+    R.forEach((r, i) => {
+      const col = red(i) ? PAL.red : PAL.ink;
+      marca(r, left[i].x, left[i].y, 6 * u, col, left[i].ausente);
+      marca(r, right[i].x, right[i].y, 6.5 * u, col, false);
+    });
+    // etiquetas de técnica
+    p.textFont('Instrument Serif'); p.textStyle(p.ITALIC); p.textSize(19 * u); p.textAlign(p.CENTER, p.TOP); p.noStroke();
+    for (const [t, c] of Object.entries(C)) {
+      const n = R.filter(r => r.tecnica === t).length;
+      p.fill(PAL.ink); p.text(t, c.x, c.y + (Math.sqrt(n) * 11 + 10) * u);
+    }
+    p.textStyle(p.NORMAL);
+    // encabezados
+    p.textFont('IBM Plex Mono'); p.textSize(9 * u); p.textAlign(p.LEFT, p.TOP); p.fill(PAL.muted);
+    p.text('A — TERRITORIO DOCUMENTADO', W * 0.04, H * 0.045);
+    p.text('B — PROXIMIDAD CONCEPTUAL PROPUESTA', W * 0.6, H * 0.045);
+    p.textAlign(p.CENTER, p.TOP); p.text('TRADUCCIÓN', W * 0.44, H * 0.045);
+    p.fill(PAL.red); p.circle(W * 0.04 - 9 * u, H * 0.045 + 5 * u, 4 * u);
+    p.textAlign(p.LEFT, p.BOTTOM); p.fill(PAL.muted); p.textSize(8 * u);
+    p.text('●  PERSONA     ■  COLECTIVO     ○  DATO AUSENTE     ···  AFINIDAD POR TEMA     59 REGISTROS DEMOSTRATIVOS', W * 0.04, H * 0.975);
+    for (const [x, y] of [[14 * u, 14 * u], [W - 14 * u, 14 * u], [14 * u, H - 14 * u], [W - 14 * u, H - 14 * u]]) marcaRegistro(p, x, y, 5 * u);
+    if (STILL) listo();
+  };
+  p.windowResized = () => { if (!STILL) p.resizeCanvas(innerWidth, innerHeight); };
+};
+Promise.all(FUENTES.map(f => document.fonts.load(f))).then(() => new p5(sketch));
+</script></body></html>
